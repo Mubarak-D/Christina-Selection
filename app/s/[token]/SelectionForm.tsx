@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PublicItem, PublicSet } from "@/lib/public-set";
 import { formatPrice } from "@/lib/format";
 import { Reveal } from "@/components/Reveal";
+import { PreviewTile } from "@/components/MediaViewer";
 import { submitSelection } from "./actions";
 
 type View = "choose" | "thanks" | "locked";
@@ -141,20 +142,22 @@ function PieceCard({ item, selected, onToggle, onMediaError, mediaKey }: {
           <div className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]">
             {item.media.map((m, i) => (
               <div key={`${m.url}#${mediaKey}`} className="aspect-square w-full shrink-0 snap-center bg-line/40">
-                {m.kind === "video" ? (
-                  <video src={m.url} controls playsInline preload="metadata" onError={onMediaError} className="h-full w-full object-cover" />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
-                  <img src={m.url} alt={i === 0 ? item.title : ""} loading={i === 0 ? "eager" : "lazy"} onError={onMediaError}
-                    className="h-full w-full object-cover" />
-                )}
+                <PreviewTile items={item.media} title={item.title} index={i} className="h-full">
+                  {m.kind === "video" ? (
+                    <video src={m.url} muted playsInline preload="metadata" onError={onMediaError} className="h-full w-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
+                    <img src={m.url} alt={i === 0 ? item.title : ""} loading={i === 0 ? "eager" : "lazy"} onError={onMediaError}
+                      className="h-full w-full object-cover" />
+                  )}
+                </PreviewTile>
               </div>
             ))}
           </div>
           {/* Inset gold frame + badge: visible on all four sides even edge-to-edge. */}
           <div aria-hidden className={`pointer-events-none absolute inset-0 ring-4 ring-inset ring-gold transition-opacity duration-[var(--dur-fast)] ${selected ? "opacity-100" : "opacity-0"}`} />
           {selected && (
-            <span aria-hidden className="pop absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-gold text-pearl">
+            <span aria-hidden className="pop pointer-events-none absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-gold text-pearl">
               <CheckIcon />
             </span>
           )}

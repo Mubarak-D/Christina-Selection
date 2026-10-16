@@ -5,6 +5,7 @@ import { signedUrls } from "@/lib/public-set";
 import { PieceForm } from "@/components/PieceForm";
 import { MediaUploader } from "@/components/MediaUploader";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PreviewTile, type ViewerItem } from "@/components/MediaViewer";
 import { deleteMedia, savePiece } from "../actions";
 
 export default async function PiecePage({
@@ -19,6 +20,8 @@ export default async function PiecePage({
 
   const media = [...piece.piece_media].sort((a, b) => a.sort - b.sort);
   const urls = await signedUrls(media.map((m) => m.path));
+  const items: ViewerItem[] = media.filter((m) => urls[m.path])
+    .map((m) => ({ kind: m.kind as ViewerItem["kind"], url: urls[m.path] }));
 
   async function save(fd: FormData) {
     "use server";
@@ -33,14 +36,16 @@ export default async function PiecePage({
 
       <h2 className="mb-2 mt-8 text-xl">Photos & videos</h2>
       <ul aria-label="Media" className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {media.map((m) => (
+        {media.map((m, i) => (
           <li key={m.id} className="flex flex-col gap-1">
-            {m.kind === "video" ? (
-              <video src={urls[m.path]} controls playsInline preload="metadata" className="aspect-square w-full rounded bg-black object-cover" />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
-              <img src={urls[m.path]} alt={piece.title} className="aspect-square w-full rounded object-cover" />
-            )}
+            <PreviewTile items={items} title={piece.title} index={i}>
+              {m.kind === "video" ? (
+                <video src={urls[m.path]} muted playsInline preload="metadata" className="aspect-square w-full rounded bg-ink object-cover" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
+                <img src={urls[m.path]} alt={piece.title} className="aspect-square w-full rounded object-cover" />
+              )}
+            </PreviewTile>
             <form action={deleteMedia.bind(null, m.id)}>
               <SubmitButton className="text-sm text-danger" pendingLabel="Removing…">Remove</SubmitButton>
             </form>

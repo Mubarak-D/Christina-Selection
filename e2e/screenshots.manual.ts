@@ -32,6 +32,10 @@ test("capture", async ({ browser }) => {
     await phone.goto(`/s/${s!.token}`);
     await phone.waitForTimeout(800);
     await phone.screenshot({ path: `${OUT}/1-customer-top.png` });
+    await phone.getByRole("button", { name: "View Solitaire Ring full screen" }).first().click();
+    await phone.waitForTimeout(600);
+    await phone.screenshot({ path: `${OUT}/1b-customer-viewer.png` });
+    await phone.keyboard.press("Escape");
     await phone.getByRole("button", { name: "Choose Solitaire Ring" }).click();
     await phone.waitForTimeout(400);
     await phone.screenshot({ path: `${OUT}/2-customer-selected.png` });

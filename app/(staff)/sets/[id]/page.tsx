@@ -9,6 +9,7 @@ import { SITE_URL } from "@/lib/config";
 import { NewPieceForm } from "@/components/NewPieceForm";
 import { SendSet } from "@/components/SendSet";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PreviewTile, type ViewerItem } from "@/components/MediaViewer";
 import { addOneOff, markHandled, markSeen, reopen } from "../actions";
 
 const ORDER = { chosen: 0, pending: 1, dismissed: 2 } as const;
@@ -27,9 +28,12 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
   const customer = set.customers;
   const items = [...set.set_items].sort(
     (a, b) => ORDER[a.status as keyof typeof ORDER] - ORDER[b.status as keyof typeof ORDER]);
-  const thumbs = items.map((i) =>
-    i.pieces?.piece_media.filter((m) => m.kind === "image").sort((a, b) => a.sort - b.sort)[0]?.path);
-  const urls = await signedUrls(thumbs.filter((t): t is string => !!t));
+  const urls = await signedUrls(items.flatMap((i) => i.pieces?.piece_media.map((m) => m.path) ?? []));
+  // Every photo/video per piece, in order, for the full-screen preview; the tile shows the first photo.
+  const viewer = items.map((i): ViewerItem[] =>
+    [...(i.pieces?.piece_media ?? [])].sort((a, b) => a.sort - b.sort).filter((m) => urls[m.path])
+      .map((m) => ({ kind: m.kind as ViewerItem["kind"], url: urls[m.path] })));
+  const thumbIndex = viewer.map((v) => Math.max(0, v.findIndex((m) => m.kind === "image")));
 
   const link = `${SITE_URL}/s/${set.token}`;
   const firstName = customer.name.split(/\s+/)[0];
@@ -54,14 +58,20 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
       <ul className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item, i) => item.pieces && (
           <li key={item.pieces.id}>
+            <div className={`aspect-square overflow-hidden rounded bg-line/40 ${item.status === "chosen" ? "ring-4 ring-gold" : ""} ${item.status === "dismissed" ? "opacity-40 grayscale" : ""}`}>
+              {viewer[i].length > 0 && (
+                <PreviewTile items={viewer[i]} title={item.pieces.title} index={thumbIndex[i]} className="h-full">
+                  {viewer[i][thumbIndex[i]].kind === "video" ? (
+                    <video src={viewer[i][thumbIndex[i]].url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
+                    <img src={viewer[i][thumbIndex[i]].url} alt={item.pieces.title} className="h-full w-full object-cover" />
+                  )}
+                </PreviewTile>
+              )}
+            </div>
             <Link href={`/catalogue/${item.pieces.id}?set=${set.id}`} className="block">
-              <div className={`aspect-square overflow-hidden rounded bg-line/40 ${item.status === "chosen" ? "ring-4 ring-gold" : ""} ${item.status === "dismissed" ? "opacity-40 grayscale" : ""}`}>
-                {thumbs[i] && urls[thumbs[i]!] && (
-                  // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
-                  <img src={urls[thumbs[i]!]} alt={item.pieces.title} className="h-full w-full object-cover" />
-                )}
-              </div>
-              <span className="mt-1 block">{item.pieces.title}</span>
+              <span className="mt-1 block underline-offset-4 hover:underline">{item.pieces.title}</span>
               <span className="block text-sm text-muted">
                 {formatPrice(item.pieces.price)}
                 {item.status === "chosen" && <span className="text-gold-ink"> · Chosen</span>}
