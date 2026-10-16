@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { flash } from "@/lib/flash";
 import type { TablesUpdate } from "@/lib/database.types";
 import { savePiece } from "../catalogue/actions";
+import { deletePieces, oneOffPiecesIn } from "@/lib/delete-pieces";
 
 export async function createSet(formData: FormData): Promise<{ id: string }> {
   const supabase = await createClient();
@@ -71,4 +72,27 @@ export async function reopen(setId: string) {
   await stamp(setId, { handled_at: null });
   await flash("Set reopened");
   revalidatePath(`/sets/${setId}`);
+}
+
+// Deletes the set and its one-off pieces; catalogue pieces stay in the catalogue.
+export async function deleteSet(setId: string) {
+  const supabase = await createClient();
+  const { data: set } = await supabase.from("selection_sets").select("customer_id").eq("id", setId).single();
+  const oneOffs = await oneOffPiecesIn(supabase, [setId]);
+  const { error } = await supabase.from("selection_sets").delete().eq("id", setId);
+  if (error) throw error;
+  await deletePieces(supabase, oneOffs);
+  await flash("Set deleted");
+  redirect(set ? `/customers/${set.customer_id}` : "/");
+}
+
+// Takes a piece out of the set; a one-off piece has nowhere else to live, so it's deleted.
+export async function removeFromSet(setId: string, pieceId: string) {
+  const supabase = await createClient();
+  const oneOff = (await oneOffPiecesIn(supabase, [setId])).includes(pieceId);
+  const { error } = await supabase.from("set_items").delete().eq("set_id", setId).eq("piece_id", pieceId);
+  if (error) throw error;
+  if (oneOff) await deletePieces(supabase, [pieceId]);
+  revalidatePath(`/sets/${setId}`);
+  await flash("Removed from set");
 }

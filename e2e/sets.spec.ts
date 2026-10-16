@@ -40,8 +40,8 @@ test("build a set, add a one-off, send it and mark it handled", async ({ page, c
   await expect(page.getByRole("status").filter({ hasText: "Set created" })).toBeVisible();
   const setUrl = page.url();
 
-  await expect(page.getByText(`Ring ${tag}`)).toBeVisible();
-  await expect(page.getByText(`Bangle ${tag}`)).toBeVisible();
+  await expect(page.getByRole("link", { name: `Ring ${tag}` })).toBeVisible();
+  await expect(page.getByRole("link", { name: `Bangle ${tag}` })).toBeVisible();
 
   // One-off piece: details here, then photos on its own page, then back to the set.
   await page.getByText("Add a one-off piece to this set").click();
@@ -50,7 +50,7 @@ test("build a set, add a one-off, send it and mark it handled", async ({ page, c
   await oneOff.getByLabel("Add photos or videos").setInputFiles("e2e/fixtures/ring.jpg");
   await oneOff.getByRole("button", { name: "Add one-off piece" }).click();
   // Stays on the set; the one-off appears with its photo.
-  await expect(page.getByText(`One-off ${tag}`)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("link", { name: `One-off ${tag}` })).toBeVisible({ timeout: 20_000 });
   await expect(page).toHaveURL(setUrl);
   await expect(page.getByRole("img", { name: `One-off ${tag}` })).toBeVisible();
 

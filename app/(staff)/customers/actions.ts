@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { flash } from "@/lib/flash";
+import { deletePieces, oneOffPiecesIn } from "@/lib/delete-pieces";
 import { createClient } from "@/lib/supabase/server";
 import { normalisePhone } from "@/lib/phone";
 import { normaliseEmail } from "@/lib/email";
@@ -40,4 +43,17 @@ export async function saveCustomer(formData: FormData): Promise<{ id: string } |
   if (error) return { error: "Couldn't save. Please try again." };
   revalidatePath("/customers");
   return { id: data.id };
+}
+
+// Deletes the customer, their sets (cascade) and the one-off pieces made for those sets.
+export async function deleteCustomer(id: string) {
+  const supabase = await createClient();
+  const { data: sets } = await supabase.from("selection_sets").select("id").eq("customer_id", id);
+  const oneOffs = await oneOffPiecesIn(supabase, (sets ?? []).map((s) => s.id));
+  const { error } = await supabase.from("customers").delete().eq("id", id);
+  if (error) throw error;
+  await deletePieces(supabase, oneOffs);
+  revalidatePath("/customers");
+  await flash("Customer deleted");
+  redirect("/customers");
 }

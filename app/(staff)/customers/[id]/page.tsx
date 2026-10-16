@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CustomerForm } from "@/components/CustomerForm";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { deleteCustomer } from "../actions";
 
 const day = (t: string | null) => (t ? new Date(t).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" }) : "-");
 
@@ -54,6 +56,12 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
       <h2 className="mb-2 text-xl">Details</h2>
       <CustomerForm customer={customer} />
+
+      <div className="mt-12 border-t border-line pt-6">
+        <ConfirmButton action={deleteCustomer.bind(null, customer.id)} label="Delete customer"
+          title={`Delete ${customer.name}?`}
+          message={`${sets?.length ? `This also deletes their ${sets.length} ${sets.length === 1 ? "set" : "sets"}. ` : ""}This can't be undone.`} />
+      </div>
     </>
   );
 }

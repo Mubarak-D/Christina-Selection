@@ -11,7 +11,8 @@ import { NewPieceForm } from "@/components/NewPieceForm";
 import { SendSet } from "@/components/SendSet";
 import { SubmitButton } from "@/components/SubmitButton";
 import { PreviewTile, type ViewerItem } from "@/components/MediaViewer";
-import { addOneOff, markHandled, markSeen, reopen } from "../actions";
+import { addOneOff, deleteSet, markHandled, markSeen, removeFromSet, reopen } from "../actions";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 const ORDER = { chosen: 0, pending: 1, dismissed: 2 } as const;
 
@@ -21,7 +22,7 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
   const supabase = await createClient();
   const { data: set } = await supabase
     .from("selection_sets")
-    .select("*, customers(id,name,phone,email), set_items(status, pieces(id,title,price,piece_media(path,kind,sort)))")
+    .select("*, customers(id,name,phone,email), set_items(status, pieces(id,title,price,in_catalogue,piece_media(path,kind,sort)))")
     .eq("id", id)
     .maybeSingle();
   if (!set || !set.customers) notFound();
@@ -37,6 +38,7 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
   const thumbIndex = viewer.map((v) => Math.max(0, v.findIndex((m) => m.kind === "image")));
 
   const link = `${SITE_URL}/s/${set.token}`;
+  const oneOffs = items.filter((i) => i.pieces && !i.pieces.in_catalogue).length;
   const firstName = customer.name.split(/\s+/)[0];
   const status = set.handled_at ? "Handled" : set.submitted_at ? "Customer has chosen" : set.sent_at ? "Waiting for customer" : "Not sent yet";
 
@@ -53,6 +55,9 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
         <form action={(set.handled_at ? reopen : markHandled).bind(null, set.id)}>
           <SubmitButton className="btn btn-outline" pendingLabel="Saving…">{set.handled_at ? "Reopen" : "Mark handled"}</SubmitButton>
         </form>
+        <ConfirmButton action={deleteSet.bind(null, set.id)} label="Delete set" className="eyebrow min-h-11 text-danger"
+          title={`Delete ${set.title || "this set"}?`}
+          message={`${oneOffs ? `This also deletes ${oneOffs} one-off ${oneOffs === 1 ? "piece" : "pieces"} made for it. ` : ""}Catalogue pieces stay in the catalogue. The customer's link will stop working.`} />
       </div>
 
       <ul className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -78,6 +83,11 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
                 {item.status === "dismissed" && " · Set aside"}
               </span>
             </Link>
+            <ConfirmButton action={removeFromSet.bind(null, set.id, item.pieces.id)} label="Remove"
+              ariaLabel={`Remove ${item.pieces.title} from set`} confirmLabel="Remove"
+              className="mt-1 min-h-11 text-sm text-danger"
+              title={`Remove ${item.pieces.title}?`}
+              message={item.pieces.in_catalogue ? "It stays in the catalogue." : "It was made just for this set, so it will be deleted."} />
           </li>
         ))}
       </ul>

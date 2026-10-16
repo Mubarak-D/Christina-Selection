@@ -6,7 +6,8 @@ import { PieceForm } from "@/components/PieceForm";
 import { MediaUploader } from "@/components/MediaUploader";
 import { SubmitButton } from "@/components/SubmitButton";
 import { PreviewTile, type ViewerItem } from "@/components/MediaViewer";
-import { deleteMedia, savePiece } from "../actions";
+import { deleteMedia, deletePiece, savePiece } from "../actions";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { flash } from "@/lib/flash";
 
 export default async function PiecePage({
@@ -19,6 +20,7 @@ export default async function PiecePage({
     .from("pieces").select("*,piece_media(id,path,kind,sort)").eq("id", id).maybeSingle();
   if (!piece) notFound();
 
+  const { count: inSets } = await supabase.from("set_items").select("*", { count: "exact", head: true }).eq("piece_id", id);
   const media = [...piece.piece_media].sort((a, b) => a.sort - b.sort);
   const urls = await signedUrls(media.map((m) => m.path));
   const items: ViewerItem[] = media.filter((m) => urls[m.path])
@@ -55,6 +57,12 @@ export default async function PiecePage({
         ))}
       </ul>
       <MediaUploader pieceId={piece.id} nextSort={media.length} />
+
+      <div className="mt-12 border-t border-line pt-6">
+        <ConfirmButton action={deletePiece.bind(null, piece.id, set ? `/sets/${set}` : "/catalogue")} label="Delete piece"
+          title={`Delete ${piece.title}?`}
+          message={`Its photos and videos are deleted too.${inSets ? ` It will be removed from ${inSets} ${inSets === 1 ? "set" : "sets"}.` : ""} This can't be undone.`} />
+      </div>
     </>
   );
 }

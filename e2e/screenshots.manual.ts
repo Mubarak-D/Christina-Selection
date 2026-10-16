@@ -50,6 +50,10 @@ test("capture", async ({ browser }) => {
     await staff.screenshot({ path: `${OUT}/4b-staff-customers.png` });
     await staff.goto(`/sets/${s!.id}`);
     await staff.screenshot({ path: `${OUT}/5-staff-set.png` });
+    await staff.getByRole("button", { name: "Delete set" }).click();
+    await staff.waitForTimeout(300);
+    await staff.screenshot({ path: `${OUT}/5b-staff-delete-dialog.png` });
+    await staff.keyboard.press("Escape");
     await staff.goto("/catalogue");
     await staff.screenshot({ path: `${OUT}/6-staff-catalogue.png` });
     await staff.goto("/login");

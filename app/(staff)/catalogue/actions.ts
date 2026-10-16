@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { flash } from "@/lib/flash";
+import { redirect } from "next/navigation";
+import { deletePieces } from "@/lib/delete-pieces";
 
 const text = (fd: FormData, k: string) => {
   const v = String(fd.get(k) ?? "").trim();
@@ -43,4 +45,14 @@ export async function deleteMedia(mediaId: string) {
   await supabase.from("piece_media").delete().eq("id", mediaId);
   await flash("Removed");
   revalidatePath(`/catalogue/${data.piece_id}`);
+}
+
+// Deletes the piece everywhere (it leaves any sets it was in) along with its photos/videos.
+export async function deletePiece(pieceId: string, backTo: string) {
+  const supabase = await createClient();
+  await deletePieces(supabase, [pieceId]);
+  revalidatePath("/catalogue");
+  await flash("Piece deleted");
+  // Only same-site paths ("//host" would leave the site).
+  redirect(/^\/(?!\/)/.test(backTo) ? backTo : "/catalogue");
 }
