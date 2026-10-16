@@ -16,11 +16,12 @@ export default async function PiecePage({
   const { id } = await params;
   const { set } = await searchParams;
   const supabase = await createClient();
-  const { data: piece } = await supabase
-    .from("pieces").select("*,piece_media(id,path,kind,sort)").eq("id", id).maybeSingle();
+  const [{ data: piece }, { count: inSets }] = await Promise.all([
+    supabase.from("pieces").select("*,piece_media(id,path,kind,sort)").eq("id", id).maybeSingle(),
+    supabase.from("set_items").select("*", { count: "exact", head: true }).eq("piece_id", id),
+  ]);
   if (!piece) notFound();
 
-  const { count: inSets } = await supabase.from("set_items").select("*", { count: "exact", head: true }).eq("piece_id", id);
   const media = [...piece.piece_media].sort((a, b) => a.sort - b.sort);
   const urls = await signedUrls(media.map((m) => m.path));
   const items: ViewerItem[] = media.filter((m) => urls[m.path])

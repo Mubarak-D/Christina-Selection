@@ -42,7 +42,7 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
                     <PieceThumb media={thumbs[i]} url={thumbs[i] && urls[thumbs[i]!.path]} />
                   </div>
                   <span className="flex items-center gap-2">
-                    <input type="checkbox" name="piece" value={p.id} />
+                    <input type="checkbox" name="piece" value={p.id} aria-label={p.title} />
                     {p.title}
                   </span>
                   <span className="text-sm text-muted">{formatPrice(p.price)}</span>

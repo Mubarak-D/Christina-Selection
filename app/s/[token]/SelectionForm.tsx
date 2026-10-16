@@ -101,7 +101,7 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
             {picked.length ? "We've received your choice:" : "We've noted that none of these suit you."}
           </p>
           <ChosenList items={picked} />
-          <p className="mt-8 text-muted">We&apos;ll be in touch on WhatsApp shortly.</p>
+          <p className="mt-8 text-muted">We&apos;ll be in touch shortly.</p>
           <button onClick={() => swap("choose")} className="btn btn-outline mt-10">Change my choice</button>
         </section>
       )}
@@ -144,11 +144,20 @@ function PieceCard({ item, selected, onToggle, onMediaError, mediaKey }: {
   item: PublicItem; selected: boolean; onToggle: () => void; onMediaError: () => void; mediaKey: number;
 }) {
   const specs = [item.metal, item.karat, item.weightG != null ? `${item.weightG} g` : null, item.stones].filter(Boolean);
+  // Which photo/video is in view; drives the laptop arrows (phones swipe).
+  const track = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const count = item.media.length;
+  const go = (dir: 1 | -1) => {
+    const el = track.current;
+    if (el) el.scrollTo({ left: (at + dir) * el.clientWidth, behavior: "smooth" });
+  };
   return (
     <article>
-      {!!item.media.length && (
-        <div className="relative">
-          <div className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]">
+      {!!count && (
+        <section aria-label={`${item.title} photos and videos`} className="relative">
+          <div ref={track} className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]"
+            onScroll={(e) => setAt(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
             {item.media.map((m, i) => (
               <div key={`${m.url}#${mediaKey}`} className="aspect-square w-full shrink-0 snap-center bg-line/40">
                 <PreviewTile items={item.media} title={item.title} index={i} className="h-full">
@@ -170,10 +179,25 @@ function PieceCard({ item, selected, onToggle, onMediaError, mediaKey }: {
               <CheckIcon />
             </span>
           )}
-        </div>
+          {count > 1 && (["Previous", "Next"] as const).map((label) => {
+            const dir = label === "Next" ? 1 : -1;
+            const off = label === "Next" ? at >= count - 1 : at <= 0;
+            return (
+              <button key={label} type="button" aria-label={label} disabled={off} onClick={() => go(dir)}
+                className={`absolute top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-ivory/90 text-ink shadow-[0_4px_14px_rgba(28,25,23,.15)] backdrop-blur transition-opacity disabled:opacity-0 sm:flex ${dir === 1 ? "right-3" : "left-3"}`}>
+                <svg aria-hidden viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d={dir === 1 ? "M8 4l6 6-6 6" : "M12 4l-6 6 6 6"} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            );
+          })}
+        </section>
       )}
-      {item.media.length > 1 && (
-        <p className="px-6 pt-3 text-sm text-muted">Swipe to see all {item.media.length}</p>
+      {count > 1 && (
+        <p className="px-6 pt-3 text-sm text-muted">
+          <span className="sm:hidden">Swipe to see all {count}</span>
+          <span className="hidden sm:inline">{count} photos and videos. Use the arrows to see them all.</span>
+        </p>
       )}
       <div className="flex flex-col gap-2 px-6 pt-6">
         <h2 className="display text-[1.5rem] leading-snug [text-wrap:balance]">{item.title}</h2>

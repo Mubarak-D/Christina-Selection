@@ -18,13 +18,15 @@ const STATUS = {
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: customer } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
+  // In parallel: each query is a round trip to the database.
+  const [{ data: customer }, { data: sets }] = await Promise.all([
+    supabase.from("customers").select("*").eq("id", id).maybeSingle(),
+    supabase.from("selection_sets")
+      .select("id,title,created_at,sent_at,submitted_at,handled_at,set_items(status)")
+      .eq("customer_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
   if (!customer) notFound();
-  const { data: sets } = await supabase
-    .from("selection_sets")
-    .select("id,title,created_at,sent_at,submitted_at,handled_at,set_items(status)")
-    .eq("customer_id", id)
-    .order("created_at", { ascending: false });
 
   return (
     <>

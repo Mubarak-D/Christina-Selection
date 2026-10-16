@@ -18,13 +18,13 @@ const ORDER = { chosen: 0, pending: 1, dismissed: 2 } as const;
 
 export default async function SetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await markSeen(id);
   const supabase = await createClient();
-  const { data: set } = await supabase
+  // Marking seen and loading the set don't depend on each other.
+  const [, { data: set }] = await Promise.all([markSeen(id), supabase
     .from("selection_sets")
     .select("*, customers(id,name,phone,email), set_items(status, pieces(id,title,price,in_catalogue,piece_media(path,kind,sort)))")
     .eq("id", id)
-    .maybeSingle();
+    .maybeSingle()]);
   if (!set || !set.customers) notFound();
 
   const customer = set.customers;

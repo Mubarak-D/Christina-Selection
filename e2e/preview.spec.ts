@@ -40,6 +40,16 @@ test("customer taps a photo to see it full screen, then closes it", async ({ pag
   await expect(viewer).toBeHidden();
 });
 
+test("on a laptop, arrows move through a piece's photos and videos", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`/s/${token}`);
+  const gallery = page.getByRole("region", { name: `Preview Ring ${tag} photos and videos` });
+  await expect(gallery.getByRole("button", { name: "Previous" })).toBeDisabled();
+  await gallery.getByRole("button", { name: "Next" }).click();
+  await expect(gallery.locator("video")).toBeInViewport({ ratio: 0.9 });
+  await expect(gallery.getByRole("button", { name: "Next" })).toBeDisabled();
+});
+
 test.describe("staff", () => {
   test.use({ storageState: STAFF_STATE });
 
