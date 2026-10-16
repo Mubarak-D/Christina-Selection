@@ -26,6 +26,7 @@ test("audit every page", async ({ browser }) => {
   }
   const { data: s } = await db.from("selection_sets").insert({ customer_id: c!.id, title: "Audit shortlist", sent_at: new Date().toISOString() }).select().single();
   await db.from("set_items").insert(pieces!.map((p) => ({ set_id: s!.id, piece_id: p.id })));
+  await db.from("sales").insert({ customer_id: c!.id, set_id: s!.id, piece_id: pieces![0].id, title: pieces![0].title, price: pieces![0].price });
 
   const pages: [string, string, boolean][] = [
     ["login", "/login", false],

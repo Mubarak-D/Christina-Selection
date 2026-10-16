@@ -55,10 +55,11 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           <h2 className="mb-3 text-xl">Purchases</h2>
           <ul className="flex flex-col divide-y divide-line rounded-xl border border-line bg-pearl px-4">
             {sales.map((s) => (
-              <li key={s.id} className="flex items-baseline gap-4 py-3">
-                <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                <span className="shrink-0 text-sm text-muted">{formatDate(s.sold_at)}</span>
-                <span className="price w-28 shrink-0 text-right">{formatPrice(s.price)}</span>
+              <li key={s.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 py-3">
+                {/* Phone: name on its own line, date and price below. */}
+                <span className="min-w-0 basis-full sm:flex-1 sm:basis-auto sm:truncate">{s.title}</span>
+                <span className="text-sm text-muted">{formatDate(s.sold_at)}</span>
+                <span className="price ml-auto shrink-0 text-right sm:w-28">{formatPrice(s.price)}</span>
               </li>
             ))}
             <li className="flex items-baseline justify-between py-3">
