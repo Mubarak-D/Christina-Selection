@@ -70,16 +70,20 @@ export function NewPieceForm({
       setError("Couldn't save. Please try again.");
       return;
     }
-    try {
-      for (const [i, c] of chosen.entries()) {
-        setStatus(`Uploading ${i + 1} of ${chosen.length}…`);
+    let failed = 0;
+    for (const [i, c] of chosen.entries()) {
+      setStatus(`Uploading ${i + 1} of ${chosen.length}…`);
+      try {
         await uploadMedia(id, c.file, i);
+      } catch {
+        failed += 1;
       }
-    } catch {
-      setError("The piece was saved, but an upload failed. Add the rest on the piece's page.");
     }
-    const n = chosen.length;
-    toast(`${inCatalogue ? "Piece saved" : "One-off piece added"}${n ? ` with ${n} ${n === 1 ? "file" : "files"}` : ""}`);
+    const done = chosen.length - failed;
+    const what = inCatalogue ? "Piece saved" : "One-off piece added";
+    toast(failed
+      ? `${what}, but ${failed} of ${chosen.length} ${chosen.length === 1 ? "file" : "files"} didn't upload. Add ${failed === 1 ? "it" : "them"} again on the piece's page.`
+      : `${what}${done ? ` with ${done} ${done === 1 ? "file" : "files"}` : ""}`);
     const to = destination.replace(":id", id);
     if (to === pathname) {
       form.current?.reset();

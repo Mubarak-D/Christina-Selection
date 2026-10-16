@@ -41,9 +41,9 @@ export default async function PiecePage({
 
       <h2 className="mb-2 mt-8 text-xl">Photos & videos</h2>
       <ul aria-label="Media" className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {media.map((m, i) => (
+        {media.map((m) => (
           <li key={m.id} className="flex flex-col gap-1">
-            <PreviewTile items={items} title={piece.title} index={i}>
+            <PreviewTile items={items} title={piece.title} index={Math.max(0, items.findIndex((x) => x.url === urls[m.path]))}>
               {m.kind === "video" ? (
                 <video src={urls[m.path]} muted playsInline preload="metadata" className="aspect-square w-full rounded bg-ink object-cover" />
               ) : (

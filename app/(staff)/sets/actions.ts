@@ -63,31 +63,20 @@ export async function markSeen(setId: string) {
   if (error) console.error("markSeen failed", setId, error.message); // don't block the page over it
 }
 
-// Marks the set handled and records what the customer bought (the ticked pieces).
-// Title and price come from the database at the time of sale, never from the form.
+// Marks the set handled and records what the customer bought (the ticked pieces), atomically:
+// a second press or a second device records nothing (see migration 0011).
 export async function markHandled(setId: string, formData?: FormData) {
   const supabase = await createClient();
-  const sold = new Set((formData?.getAll("sold") ?? []).map(String));
-  const { data: set, error } = await supabase.from("selection_sets")
-    .select("customer_id, set_items(piece_id, pieces(title, price))").eq("id", setId).single();
+  const sold = (formData?.getAll("sold") ?? []).map(String);
+  const { data: n, error } = await supabase.rpc("mark_handled", { p_set_id: setId, p_sold: sold });
   if (error) throw error;
-  const rows = set.set_items
-    .filter((i) => sold.has(i.piece_id) && i.pieces)
-    .map((i) => ({ customer_id: set.customer_id, set_id: setId, piece_id: i.piece_id, title: i.pieces!.title, price: i.pieces!.price }));
-  if (rows.length) {
-    const ins = await supabase.from("sales").insert(rows);
-    if (ins.error) throw ins.error;
-  }
-  await stamp(setId, { handled_at: new Date().toISOString() });
-  await flash(rows.length ? `Marked handled · ${rows.length} ${rows.length === 1 ? "sale" : "sales"} recorded` : "Marked handled");
+  await flash(n === -1 ? "Already marked handled"
+    : n ? `Marked handled · ${n} ${n === 1 ? "sale" : "sales"} recorded` : "Marked handled");
   revalidatePath(`/sets/${setId}`);
 }
 
-// Undoes Mark handled, including the sales it recorded, so handling again can't double-count.
+// Undoes Mark handled. Recorded sales stay until the set is handled again, which replaces them.
 export async function reopen(setId: string) {
-  const supabase = await createClient();
-  const del = await supabase.from("sales").delete().eq("set_id", setId);
-  if (del.error) throw del.error;
   await stamp(setId, { handled_at: null });
   await flash("Set reopened");
   revalidatePath(`/sets/${setId}`);
@@ -98,9 +87,9 @@ export async function deleteSet(setId: string) {
   const supabase = await createClient();
   const { data: set } = await supabase.from("selection_sets").select("customer_id").eq("id", setId).single();
   const oneOffs = await oneOffPiecesIn(supabase, [setId]);
+  await deletePieces(supabase, oneOffs); // first, so a failure can't leave unreachable pieces
   const { error } = await supabase.from("selection_sets").delete().eq("id", setId);
   if (error) throw error;
-  await deletePieces(supabase, oneOffs);
   await flash("Set deleted");
   redirect(set ? `/customers/${set.customer_id}` : "/");
 }

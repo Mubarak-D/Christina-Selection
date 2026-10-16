@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { newChoiceCount } from "@/app/(staff)/nav-actions";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -10,8 +12,15 @@ const NAV = [
   { href: "/sets/new", label: "New set" },
 ];
 
-export function StaffNav({ newChoices }: { newChoices: number }) {
+export function StaffNav({ newChoices: initial }: { newChoices: number }) {
   const path = usePathname();
+  // The layout (and its count) doesn't re-render on client navigation; refresh on each page change.
+  const [newChoices, setNewChoices] = useState(initial);
+  useEffect(() => {
+    let live = true;
+    newChoiceCount().then((n) => { if (live) setNewChoices(n); }, () => {});
+    return () => { live = false; };
+  }, [path]);
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   return (
     <nav className="flex gap-x-5 overflow-x-auto whitespace-nowrap pr-8 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)] sm:flex-wrap sm:gap-x-6 sm:pr-0 sm:[mask-image:none]">

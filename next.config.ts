@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        // Only frame-ancestors for now: a full script CSP needs per-request nonces (cost: dynamic rendering everywhere).
+        // Baseline for responses proxy.ts doesn't cover; pages get the full nonce-based CSP from proxy.ts.
         { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'" },
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
       ],

@@ -282,6 +282,10 @@ export type Database = {
     }
     Functions: {
       is_staff: { Args: never; Returns: boolean }
+      mark_handled: {
+        Args: { p_set_id: string; p_sold: string[] }
+        Returns: number
+      }
       submit_selection: {
         Args: { p_chosen: string[]; p_token: string }
         Returns: string

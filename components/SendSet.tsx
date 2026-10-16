@@ -10,8 +10,7 @@ export function SendSet({ setId, url, whatsappHref, emailHref }: {
 }) {
   const [copied, setCopied] = useState(false);
   const sent = () => {
-    markSent(setId);
-    toast("Marked as sent");
+    markSent(setId).then(() => toast("Marked as sent"), () => toast("Couldn't mark as sent. Check your connection."));
   };
   return (
     <div className="flex flex-wrap items-center gap-3">

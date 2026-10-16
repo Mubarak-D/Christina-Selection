@@ -28,6 +28,8 @@ describe("staff list", () => {
 
     expect((await outsider.from("customers").select()).data).toEqual([]);
     expect((await outsider.from("alerts").select()).data ?? []).toEqual([]);
+    expect((await outsider.from("sales").select()).data ?? []).toEqual([]);
+    expect((await outsider.rpc("mark_handled", { p_set_id: "00000000-0000-0000-0000-000000000000", p_sold: [] })).data).toBe(-1);
     const ins = await outsider.from("pieces").insert({ title: "TEST outsider piece" });
     expect(ins.error).not.toBeNull();
     const list = await outsider.storage.from("media").list();

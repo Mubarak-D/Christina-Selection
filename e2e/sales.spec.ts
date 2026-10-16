@@ -42,10 +42,14 @@ test("marking handled records what was bought on the customer's page", async ({ 
   await expect(purchases.getByText(`Unsold Chain ${tag}`)).toHaveCount(0);
   await expect(purchases.getByRole("listitem").filter({ hasText: "Total" })).toContainText("120,000");
 
-  // Reopening undoes the handled state and its recorded sales.
+  // Reopen keeps the record; handling again replaces it (here: nothing bought after all).
   await page.goto(`/sets/${setId}`);
   await page.getByRole("button", { name: "Reopen" }).click();
-  await expect(page.getByRole("button", { name: "Mark handled" })).toBeVisible();
+  await page.getByRole("button", { name: "Mark handled" }).click();
+  const again = page.getByRole("dialog", { name: "What did they buy?" });
+  await again.getByRole("checkbox", { name: new RegExp(`Sold Ring ${tag}`) }).uncheck();
+  await again.getByRole("button", { name: "Mark handled" }).click();
+  await expect(page.getByRole("button", { name: "Reopen" })).toBeVisible();
   await page.goto(`/customers/${customerId}`);
   await expect(page.getByRole("region", { name: "Purchases" })).toHaveCount(0);
 });

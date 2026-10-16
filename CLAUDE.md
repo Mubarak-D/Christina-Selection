@@ -19,6 +19,9 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 - `selection_sets`: a set of pieces sent to one customer. Has an unguessable `token` (used in the public link), `sent_at`, `submitted_at`, `seen_at`, `handled_at`.
 - `set_items`: pieces in a set, with `status`: `pending` → `chosen` | `dismissed`.
 
+## Sales
+`sales` records what was bought: written only by `mark_handled()` (migration 0011, atomic, replaces a set's sales on re-handle) with title/price copied at sale time. Shown as Purchases on the customer page.
+
 ## Two surfaces
 - **Staff app** (auth required): customers, pieces, building and sending sets, dashboard with alerts. All staff have equal access, so there are no roles.
 - **Customer page** `/s/[token]` (no login): mobile-first gallery of the set's pieces; customer taps to choose, then submits. On submit, the chosen items become `chosen`, the rest become `dismissed`, and `submitted_at` is set. The customer may resubmit until `handled_at` is set (staff press "Mark handled"); each resubmit clears `seen_at` so staff are alerted again. Customers can choose any number of pieces. Media is served via short-lived signed URLs, never public buckets.
@@ -26,9 +29,9 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 ## Conventions
 - **Sending:** a `wa.me/<phone>?text=` link with the set URL prefilled; staff tap it and send from their own WhatsApp. No WhatsApp Business API.
 - **Alerts** are derived by queries, not stored or scheduled:
-  - customer chose: `submitted_at` set and `seen_at` null
+  - customer choices: `submitted_at` set and `handled_at` null (stay until Mark handled); `is_new` = `seen_at` null drives the New tag and nav badge
   - no reply: `sent_at` older than 3 days and `submitted_at` null
-  - dates: birthday/anniversary within the next 7 days
+  - deadlines: customer `deadline` within the next 7 days, or overdue
   - the windows are constants; alerts live in one `alerts` DB view, using Sri Lanka dates (Asia/Colombo)
 - The customer page is the only public, unauthenticated surface. Validate the token server-side and expose only that set's data. Enforce access with Supabase RLS.
 - Staff = accounts on the `staff` table (RLS uses `public.is_staff()`), not merely signed-in users. Add staff with `npm run staff:add -- email` (invites + lists them). Public signup should also be disabled in Supabase. RLS allows staff only; the customer page uses token-scoped server code with the service role key, which must never reach the browser.

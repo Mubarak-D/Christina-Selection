@@ -45,11 +45,17 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
   async function submit() {
     setSending(true);
     setError(null);
-    const result = await submitSelection(token, [...chosen]).catch(() => "error" as const);
+    const ids = new Set(set.items.map((i) => i.pieceId));
+    const result = await submitSelection(token, [...chosen].filter((id) => ids.has(id))).catch(() => "error" as const);
     setSending(false);
     if (result === "ok") swap("thanks");
     else if (result === "locked") swap("locked");
-    else setError("Couldn't send. Please try again.");
+    else if (result === "invalid") {
+      // The set changed while the page was open (a piece removed): reload it and let them re-check.
+      router.refresh();
+      setChosen((prev) => new Set([...prev].filter((id) => ids.has(id))));
+      setError("This selection was updated. Please check your choices and send again.");
+    } else setError("Couldn't send. Please try again.");
   }
 
   // Signed media URLs last an hour; customers often reopen the WhatsApp tab later.

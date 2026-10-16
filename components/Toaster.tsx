@@ -42,7 +42,7 @@ export function Toaster({ flashKey }: { flashKey?: string }) {
 
   useEffect(() => {
     if (!current) return;
-    const timer = setTimeout(() => setCurrent(null), 3200);
+    const timer = setTimeout(() => setCurrent(null), current.message.length > 60 ? 7000 : 3200);
     return () => clearTimeout(timer);
   }, [current]);
 

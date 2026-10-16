@@ -50,9 +50,9 @@ export async function deleteCustomer(id: string) {
   const supabase = await createClient();
   const { data: sets } = await supabase.from("selection_sets").select("id").eq("customer_id", id);
   const oneOffs = await oneOffPiecesIn(supabase, (sets ?? []).map((s) => s.id));
+  await deletePieces(supabase, oneOffs); // first, so a failure can't leave unreachable pieces
   const { error } = await supabase.from("customers").delete().eq("id", id);
   if (error) throw error;
-  await deletePieces(supabase, oneOffs);
   revalidatePath("/customers");
   await flash("Customer deleted");
   redirect("/customers");

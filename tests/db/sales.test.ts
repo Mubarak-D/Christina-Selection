@@ -35,3 +35,32 @@ describe("sales", () => {
     expect(ins.error).not.toBeNull();
   });
 });
+
+describe("mark_handled", () => {
+  // Signed in as the e2e staff user is not available here, so call as service (RLS bypass is fine:
+  // the function's logic is what's under test; staff-only access is covered by the RLS tests).
+  test("records the chosen pieces once, even if pressed twice", async () => {
+    const { customerId, pieceId, setId } = await seed();
+    await db().from("set_items").insert({ set_id: setId, piece_id: pieceId });
+    const first = await db().rpc("mark_handled", { p_set_id: setId, p_sold: [pieceId] });
+    const second = await db().rpc("mark_handled", { p_set_id: setId, p_sold: [pieceId] });
+    expect(first.data).toBe(1);
+    expect(second.data).toBe(-1); // already handled: nothing recorded
+    const { data } = await db().from("sales").select("title").eq("customer_id", customerId);
+    expect(data).toHaveLength(1);
+  });
+
+  test("handling again after reopen replaces the set's sales instead of adding", async () => {
+    const { customerId, pieceId, setId } = await seed();
+    await db().from("set_items").insert({ set_id: setId, piece_id: pieceId });
+    await db().rpc("mark_handled", { p_set_id: setId, p_sold: [pieceId] });
+    await db().from("selection_sets").update({ handled_at: null }).eq("id", setId); // Reopen
+    expect((await db().rpc("mark_handled", { p_set_id: setId, p_sold: [] })).data).toBe(0);
+    expect((await db().from("sales").select("id").eq("customer_id", customerId)).data).toEqual([]);
+  });
+
+  test("ignores pieces that aren't in the set", async () => {
+    const { pieceId, setId } = await seed(); // piece not added to the set
+    expect((await db().rpc("mark_handled", { p_set_id: setId, p_sold: [pieceId] })).data).toBe(0);
+  });
+});

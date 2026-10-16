@@ -41,8 +41,10 @@ export async function deleteMedia(mediaId: string) {
   const supabase = await createClient();
   const { data } = await supabase.from("piece_media").select("path,piece_id").eq("id", mediaId).single();
   if (!data) return;
-  await supabase.storage.from("media").remove([data.path]);
-  await supabase.from("piece_media").delete().eq("id", mediaId);
+  const files = await supabase.storage.from("media").remove([data.path]);
+  if (files.error) throw files.error;
+  const row = await supabase.from("piece_media").delete().eq("id", mediaId);
+  if (row.error) throw row.error;
   await flash("Removed");
   revalidatePath(`/catalogue/${data.piece_id}`);
 }
@@ -54,5 +56,5 @@ export async function deletePiece(pieceId: string, backTo: string) {
   revalidatePath("/catalogue");
   await flash("Piece deleted");
   // Only same-site paths ("//host" would leave the site).
-  redirect(/^\/(?!\/)/.test(backTo) ? backTo : "/catalogue");
+  redirect(/^\/(?![\/\\])/.test(backTo) ? backTo : "/catalogue"); // also rejects "/\\host"
 }
