@@ -4,15 +4,14 @@ import { service, STAFF_STATE } from "./helpers";
 test.use({ storageState: STAFF_STATE });
 
 const tag = `${Date.now()}`;
-const names = { chose: `Chose ${tag}`, quiet: `Quiet ${tag}`, bday: `Birthday ${tag}` };
+const names = { chose: `Chose ${tag}`, quiet: `Quiet ${tag}`, due: `Deadline ${tag}` };
 const created: string[] = [];
 let newChoiceSet: string;
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
-const inDaysYearsBack = (days: number, years: number) => {
-  const d = new Date();
+const inDays = (days: number) => {
+  const d = new Date(Date.now() + 5.5 * 3_600_000); // Colombo date
   d.setUTCDate(d.getUTCDate() + days);
-  d.setUTCFullYear(d.getUTCFullYear() - years);
   return d.toISOString().slice(0, 10);
 };
 
@@ -21,7 +20,7 @@ test.beforeAll(async () => {
   const { data: cs } = await db.from("customers").insert([
     { name: names.chose, phone: `+9472${tag.slice(-7)}` },
     { name: names.quiet, phone: `+9473${tag.slice(-7)}` },
-    { name: names.bday, phone: `+9474${tag.slice(-7)}`, birthday: inDaysYearsBack(5, 30) },
+    { name: names.due, phone: `+9474${tag.slice(-7)}`, deadline: inDays(5) },
   ]).select();
   created.push(...cs!.map((c) => c.id));
   const id = (n: string) => cs!.find((c) => c.name === n)!.id;
@@ -41,7 +40,7 @@ test("dashboard shows each kind of alert, and a seen choice drops off", async ({
   const section = (name: string) => page.getByRole("region", { name });
   await expect(section("New choices").getByText(names.chose)).toBeVisible();
   await expect(section("No reply yet").getByText(names.quiet)).toBeVisible();
-  await expect(section("Coming up").getByText(names.bday)).toBeVisible();
+  await expect(section("Coming up").getByText(names.due)).toBeVisible();
   await expect(page.getByRole("link", { name: /Dashboard \(\d+\)/ })).toBeVisible();
 
   await section("New choices").getByRole("link", { name: new RegExp(names.chose) }).click();

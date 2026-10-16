@@ -8,7 +8,7 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
   const { customer } = await searchParams;
   const supabase = await createClient();
   const [{ data: customers }, { data: pieces }] = await Promise.all([
-    supabase.from("customers").select("id,name,phone").order("name"),
+    supabase.from("customers").select("id,name,phone,email").order("name"),
     supabase.from("pieces").select("id,title,price,piece_media(path,kind,sort)")
       .eq("in_catalogue", true).order("created_at", { ascending: false }),
   ]);
@@ -23,7 +23,7 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
         <label className="flex flex-col gap-1">Customer
           <select name="customer_id" required defaultValue={customer ?? ""}>
             <option value="" disabled>Choose a customer</option>
-            {customers?.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+            {customers?.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.phone ?? c.email})</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1">Set title

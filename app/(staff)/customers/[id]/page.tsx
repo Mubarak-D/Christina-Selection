@@ -20,7 +20,15 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     <>
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl">{customer.name}</h1>
-        <span className="text-muted">{customer.phone}</span>
+        <span className="flex flex-col text-right text-muted">
+          {customer.phone && <span>{customer.phone}</span>}
+          {customer.email && <span>{customer.email}</span>}
+          {customer.deadline && (
+            <span className="text-gold-ink">
+              Needed by {new Date(`${customer.deadline}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC" })}
+            </span>
+          )}
+        </span>
       </div>
 
       <h2 className="mb-2 text-xl">Sets</h2>

@@ -7,14 +7,14 @@ type Alert = Tables<"alerts">;
 const SECTIONS = [
   { kind: "new_choice", title: "New choices", empty: "No new choices." },
   { kind: "no_reply", title: "No reply yet", empty: "Everyone has replied within 3 days." },
-  { kind: "upcoming_date", title: "Coming up", empty: "No birthdays or anniversaries in the next 7 days." },
+  { kind: "deadline", title: "Coming up", empty: "No deadlines in the next 7 days." },
 ] as const;
 
 const when = (a: Alert) => {
   if (!a.due) return "";
   const d = new Date(`${a.due}T00:00:00Z`);
   const label = d.toLocaleDateString("en-LK", { day: "numeric", month: "short", timeZone: "UTC" });
-  return a.kind === "upcoming_date" ? `${a.label} · ${label}` : `${a.label} · ${a.kind === "no_reply" ? "sent" : "chosen"} ${label}`;
+  return a.kind === "deadline" ? `${a.label} · ${label}` : `${a.label} · ${a.kind === "no_reply" ? "sent" : "chosen"} ${label}`;
 };
 
 export default async function DashboardPage() {

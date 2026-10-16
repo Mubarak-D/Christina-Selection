@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatPrice } from "@/lib/format";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { buildEmailLink } from "@/lib/email";
 import { SITE_URL } from "@/lib/config";
 import { PieceForm } from "@/components/PieceForm";
-import { SendOnWhatsApp } from "@/components/SendOnWhatsApp";
+import { SendSet } from "@/components/SendSet";
 import { SubmitButton } from "@/components/SubmitButton";
 import { addOneOff, markHandled, markSeen, reopen } from "../actions";
 
@@ -18,7 +19,7 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
   const supabase = await createClient();
   const { data: set } = await supabase
     .from("selection_sets")
-    .select("*, customers(id,name,phone), set_items(status, pieces(id,title,price,piece_media(path,kind,sort)))")
+    .select("*, customers(id,name,phone,email), set_items(status, pieces(id,title,price,piece_media(path,kind,sort)))")
     .eq("id", id)
     .maybeSingle();
   if (!set || !set.customers) notFound();
@@ -42,7 +43,9 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
       <h1 className="mb-4 text-2xl">{set.title || "Selection"}</h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
-        <SendOnWhatsApp setId={set.id} href={buildWhatsAppLink(customer.phone, link, firstName)} url={link} />
+        <SendSet setId={set.id} url={link}
+          whatsappHref={customer.phone ? buildWhatsAppLink(customer.phone, link, firstName) : null}
+          emailHref={customer.email ? buildEmailLink(customer.email, link, firstName) : null} />
         <form action={(set.handled_at ? reopen : markHandled).bind(null, set.id)}>
           <SubmitButton className="btn btn-outline" pendingLabel="Saving…">{set.handled_at ? "Reopen" : "Mark handled"}</SubmitButton>
         </form>

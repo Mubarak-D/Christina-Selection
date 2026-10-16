@@ -16,31 +16,31 @@ export type Database = {
     Tables: {
       customers: {
         Row: {
-          anniversary: string | null
-          birthday: string | null
           created_at: string
+          deadline: string | null
+          email: string | null
           id: string
           name: string
           notes: string | null
-          phone: string
+          phone: string | null
         }
         Insert: {
-          anniversary?: string | null
-          birthday?: string | null
           created_at?: string
+          deadline?: string | null
+          email?: string | null
           id?: string
           name: string
           notes?: string | null
-          phone: string
+          phone?: string | null
         }
         Update: {
-          anniversary?: string | null
-          birthday?: string | null
           created_at?: string
+          deadline?: string | null
+          email?: string | null
           id?: string
           name?: string
           notes?: string | null
-          phone?: string
+          phone?: string | null
         }
         Relationships: []
       }
@@ -226,7 +226,6 @@ export type Database = {
     }
     Functions: {
       is_staff: { Args: never; Returns: boolean }
-      next_occurrence: { Args: { d: string; today?: string }; Returns: string }
       submit_selection: {
         Args: { p_chosen: string[]; p_token: string }
         Returns: string

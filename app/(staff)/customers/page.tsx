@@ -7,9 +7,9 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   // Strip characters that have meaning in PostgREST filter syntax.
   const term = q.replace(/[,()%*\\]/g, "").trim();
   const supabase = await createClient();
-  let query = supabase.from("customers").select("id,name,phone").order("name").limit(100);
+  let query = supabase.from("customers").select("id,name,phone,email").order("name").limit(100);
   const digits = phoneSearchDigits(term);
-  if (term) query = query.or(`name.ilike.%${term}%${digits ? `,phone.ilike.%${digits}%` : ""}`);
+  if (term) query = query.or(`name.ilike.%${term}%,email.ilike.%${term}%${digits ? `,phone.ilike.%${digits}%` : ""}`);
   const { data: customers } = await query;
 
   return (
@@ -20,7 +20,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       </div>
       <form className="mb-4">
         <label className="flex flex-col gap-1">Search
-          <input name="q" type="search" defaultValue={q} placeholder="Name or number" />
+          <input name="q" type="search" defaultValue={q} placeholder="Name, number or email" />
         </label>
       </form>
       {!customers?.length && <p>No customers found.</p>}
@@ -29,7 +29,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           <li key={c.id}>
             <Link href={`/customers/${c.id}`} className="flex justify-between py-3">
               <span>{c.name}</span>
-              <span className="text-muted">{c.phone}</span>
+              <span className="text-muted">{c.phone ?? c.email}</span>
             </Link>
           </li>
         ))}
