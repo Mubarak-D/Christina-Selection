@@ -20,7 +20,7 @@ export default function LoginPage() {
         </label>
         {error && <p role="alert" className="text-danger">{error}</p>}
         <button disabled={pending} className="btn btn-primary">
-          Sign in
+          {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </main>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatPrice } from "@/lib/format";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createSetAndOpen } from "../actions";
 
 export default async function NewSetPage({ searchParams }: { searchParams: Promise<{ customer?: string }> }) {
@@ -51,7 +52,7 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
             ))}
           </ul>
         </fieldset>
-        <button className="btn btn-primary">Create set</button>
+        <SubmitButton pendingLabel="Creating set…">Create set</SubmitButton>
       </form>
     </>
   );

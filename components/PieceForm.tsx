@@ -1,3 +1,5 @@
+import { SubmitButton } from "./SubmitButton";
+
 type Piece = {
   id?: string; title?: string; price?: number | null; metal?: string | null; karat?: string | null;
   weight_g?: number | null; stones?: string | null; description?: string | null;
@@ -38,7 +40,8 @@ export function PieceForm({
       <label className={`${field} sm:col-span-2`}>Description
         <textarea name="description" rows={3} defaultValue={piece.description ?? ""} className={input} />
       </label>
-      <button className="btn btn-primary sm:col-span-2">{submitLabel}</button>
+      <SubmitButton className="btn btn-primary sm:col-span-2"
+        pendingLabel={submitLabel === "Save piece" ? "Saving…" : "Adding…"}>{submitLabel}</SubmitButton>
     </form>
   );
 }

@@ -16,7 +16,7 @@ export default function SetPasswordPage() {
         </label>
         {error && <p role="alert" className="text-danger">{error}</p>}
         <button disabled={pending} className="btn btn-primary">
-          Save password
+          {pending ? "Saving…" : "Save password"}
         </button>
       </form>
     </main>

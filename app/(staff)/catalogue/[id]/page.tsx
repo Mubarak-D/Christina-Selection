@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { PieceForm } from "@/components/PieceForm";
 import { MediaUploader } from "@/components/MediaUploader";
+import { SubmitButton } from "@/components/SubmitButton";
 import { deleteMedia, savePiece } from "../actions";
 
 export default async function PiecePage({
@@ -41,7 +42,7 @@ export default async function PiecePage({
               <img src={urls[m.path]} alt={piece.title} className="aspect-square w-full rounded object-cover" />
             )}
             <form action={deleteMedia.bind(null, m.id)}>
-              <button className="text-sm text-danger">Remove</button>
+              <SubmitButton className="text-sm text-danger" pendingLabel="Removing…">Remove</SubmitButton>
             </form>
           </li>
         ))}

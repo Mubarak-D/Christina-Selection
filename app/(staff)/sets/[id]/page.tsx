@@ -7,6 +7,7 @@ import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { SITE_URL } from "@/lib/config";
 import { PieceForm } from "@/components/PieceForm";
 import { SendOnWhatsApp } from "@/components/SendOnWhatsApp";
+import { SubmitButton } from "@/components/SubmitButton";
 import { addOneOff, markHandled, markSeen, reopen } from "../actions";
 
 const ORDER = { chosen: 0, pending: 1, dismissed: 2 } as const;
@@ -43,7 +44,7 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <SendOnWhatsApp setId={set.id} href={buildWhatsAppLink(customer.phone, link, firstName)} url={link} />
         <form action={(set.handled_at ? reopen : markHandled).bind(null, set.id)}>
-          <button className="btn btn-outline">{set.handled_at ? "Reopen" : "Mark handled"}</button>
+          <SubmitButton className="btn btn-outline" pendingLabel="Saving…">{set.handled_at ? "Reopen" : "Mark handled"}</SubmitButton>
         </form>
       </div>
 

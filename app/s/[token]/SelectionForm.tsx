@@ -55,10 +55,14 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
   // On the first broken photo/video, fetch fresh URLs (selection state is kept).
   const router = useRouter();
   const refreshed = useRef(false);
+  // Bumped with the refresh so media remounts and refetches even if the new URL is identical
+  // (URLs signed within the same second match).
+  const [mediaRetry, setMediaRetry] = useState(0);
   const onMediaError = useCallback(() => {
     if (refreshed.current) return;
     refreshed.current = true;
     router.refresh();
+    setTimeout(() => setMediaRetry((n) => n + 1), 1500);
   }, [router]);
   // An image can fail before hydration attaches onError; catch those on mount.
   useEffect(() => {
@@ -107,7 +111,7 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
             {set.items.map((item, i) => (
               <li key={item.pieceId}>
                 <Reveal index={i}>
-                  <PieceCard item={item} selected={chosen.has(item.pieceId)} onToggle={() => toggle(item.pieceId)} onMediaError={onMediaError} />
+                  <PieceCard item={item} selected={chosen.has(item.pieceId)} onToggle={() => toggle(item.pieceId)} onMediaError={onMediaError} mediaKey={mediaRetry} />
                 </Reveal>
               </li>
             ))}
@@ -126,8 +130,8 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
   );
 }
 
-function PieceCard({ item, selected, onToggle, onMediaError }: {
-  item: PublicItem; selected: boolean; onToggle: () => void; onMediaError: () => void;
+function PieceCard({ item, selected, onToggle, onMediaError, mediaKey }: {
+  item: PublicItem; selected: boolean; onToggle: () => void; onMediaError: () => void; mediaKey: number;
 }) {
   const specs = [item.metal, item.karat, item.weightG != null ? `${item.weightG} g` : null, item.stones].filter(Boolean);
   return (
@@ -136,7 +140,7 @@ function PieceCard({ item, selected, onToggle, onMediaError }: {
         <div className="relative">
           <div className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]">
             {item.media.map((m, i) => (
-              <div key={m.url} className="aspect-square w-full shrink-0 snap-center bg-line/40">
+              <div key={`${m.url}#${mediaKey}`} className="aspect-square w-full shrink-0 snap-center bg-line/40">
                 {m.kind === "video" ? (
                   <video src={m.url} controls playsInline preload="metadata" onError={onMediaError} className="h-full w-full object-cover" />
                 ) : (

@@ -17,9 +17,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
+    // Production build: matches the live site (prefetching, loading screens) and avoids dev-only UI.
+    command: "npm run build && npm run start",
     url: "http://localhost:3000",
     reuseExistingServer: true,
-    timeout: 120_000,
+    timeout: 240_000,
   },
 });

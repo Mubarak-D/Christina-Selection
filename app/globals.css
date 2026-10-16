@@ -105,3 +105,14 @@
   .rise-in { animation: fade 150ms linear both !important; }
 }
 @keyframes fade { from { opacity: 0; } }
+
+/* Loading placeholders: ivory blocks with a slow gold sheen (static under reduced motion). */
+@layer components {
+  .skeleton {
+    background: linear-gradient(100deg, var(--color-line) 30%, color-mix(in srgb, var(--color-gold) 14%, var(--color-ivory)) 50%, var(--color-line) 70%) 0 0 / 300% 100%;
+    animation: sheen 1.6s var(--ease-smooth) infinite;
+    border-radius: 6px;
+  }
+}
+@keyframes sheen { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: var(--color-line); } }

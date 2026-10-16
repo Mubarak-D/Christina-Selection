@@ -41,7 +41,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
       </label>
       {error && <p role="alert" className="text-danger sm:col-span-2">{error}</p>}
       <button disabled={pending} className="btn btn-primary sm:col-span-2">
-        Save customer
+        {pending ? "Saving…" : "Save customer"}
       </button>
     </form>
   );

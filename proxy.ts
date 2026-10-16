@@ -21,8 +21,10 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Refreshes the session cookie as a side effect.
-  const { data: { user } } = await supabase.auth.getUser();
+  // Verifies the session JWT locally (ES256 signing keys, cached JWKS) instead of a round trip
+  // to Supabase Auth, and refreshes the session cookie when it is about to expire.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
   const path = request.nextUrl.pathname;
   if (!user && !PUBLIC.some((re) => re.test(path))) {
     const url = request.nextUrl.clone();

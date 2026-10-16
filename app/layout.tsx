@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant, Montserrat } from "next/font/google";
+import { Suspense } from "react";
+import { NavProgress } from "@/components/NavProgress";
 import "./globals.css";
 
 const cormorant = Cormorant({ variable: "--font-cormorant", subsets: ["latin"], weight: ["400", "500"] });
@@ -13,7 +15,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${cormorant.variable} ${montserrat.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {/* useSearchParams needs a Suspense boundary */}
+        <Suspense fallback={null}><NavProgress /></Suspense>
+        {children}
+      </body>
     </html>
   );
 }
