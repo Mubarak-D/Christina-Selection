@@ -5,3 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Declared explicitly: Netlify's automatic install of the Next.js runtime was silently skipped
+# (deploys had plugin_state "none" and no functions, so every page 404'd).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
