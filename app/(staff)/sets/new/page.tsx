@@ -20,22 +20,22 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
       <h1 className="mb-4 text-2xl">New set</h1>
       <form action={createSetAndOpen} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">Customer
-          <select name="customer_id" required defaultValue={customer ?? ""} className="rounded border px-3 py-2">
+          <select name="customer_id" required defaultValue={customer ?? ""}>
             <option value="" disabled>Choose a customer</option>
             {customers?.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1">Set title
-          <input name="title" placeholder="e.g. Wedding rings" className="rounded border px-3 py-2" />
+          <input name="title" placeholder="e.g. Wedding rings" />
         </label>
         <fieldset>
           <legend className="mb-2">Pieces from the catalogue</legend>
-          {!pieces?.length && <p className="text-sm opacity-70">The catalogue is empty. You can add one-off pieces after creating the set.</p>}
+          {!pieces?.length && <p className="text-sm text-muted">The catalogue is empty. You can add one-off pieces after creating the set.</p>}
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {pieces?.map((p, i) => (
               <li key={p.id}>
                 <label className="flex cursor-pointer flex-col gap-1 rounded border p-2 has-[:checked]:border-black">
-                  <div className="aspect-square overflow-hidden rounded bg-neutral-100">
+                  <div className="aspect-square overflow-hidden rounded bg-line/40">
                     {thumbs[i] && urls[thumbs[i]!] && (
                       // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
                       <img src={urls[thumbs[i]!]} alt="" className="h-full w-full object-cover" />
@@ -45,13 +45,13 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
                     <input type="checkbox" name="piece" value={p.id} />
                     {p.title}
                   </span>
-                  <span className="text-sm opacity-70">{formatPrice(p.price)}</span>
+                  <span className="text-sm text-muted">{formatPrice(p.price)}</span>
                 </label>
               </li>
             ))}
           </ul>
         </fieldset>
-        <button className="rounded bg-black px-4 py-2 text-white">Create set</button>
+        <button className="btn btn-primary">Create set</button>
       </form>
     </>
   );

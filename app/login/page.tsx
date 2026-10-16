@@ -6,19 +6,20 @@ import { signIn } from "./actions";
 export default function LoginPage() {
   const [error, action, pending] = useActionState(signIn, null);
   return (
-    <main className="mx-auto mt-24 max-w-sm px-4">
-      <h1 className="mb-6 text-2xl">Christina Jewellers — staff</h1>
+    <main className="mx-auto mt-24 w-full max-w-sm px-6">
+      <p className="wordmark mb-16 text-center">Christina Jewellers</p>
+      <h1 className="display mb-10 text-center text-[1.75rem]">Staff sign in</h1>
       <form action={action} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">
           Email
-          <input name="email" type="email" autoComplete="email" required className="rounded border px-3 py-2" />
+          <input name="email" type="email" autoComplete="email" required />
         </label>
         <label className="flex flex-col gap-1">
           Password
-          <input name="password" type="password" autoComplete="current-password" required className="rounded border px-3 py-2" />
+          <input name="password" type="password" autoComplete="current-password" required />
         </label>
-        {error && <p role="alert" className="text-red-700">{error}</p>}
-        <button disabled={pending} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
+        {error && <p role="alert" className="text-danger">{error}</p>}
+        <button disabled={pending} className="btn btn-primary">
           Sign in
         </button>
       </form>

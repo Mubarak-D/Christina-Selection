@@ -35,7 +35,7 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
 
   return (
     <>
-      <p className="mb-1 text-sm opacity-70">
+      <p className="mb-1 text-sm text-muted">
         <Link href={`/customers/${customer.id}`} className="underline">{customer.name}</Link> · {status}
       </p>
       <h1 className="mb-4 text-2xl">{set.title || "Selection"}</h1>
@@ -43,24 +43,24 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <SendOnWhatsApp setId={set.id} href={buildWhatsAppLink(customer.phone, link, firstName)} url={link} />
         <form action={(set.handled_at ? reopen : markHandled).bind(null, set.id)}>
-          <button className="rounded border px-4 py-2">{set.handled_at ? "Reopen" : "Mark handled"}</button>
+          <button className="btn btn-outline">{set.handled_at ? "Reopen" : "Mark handled"}</button>
         </form>
       </div>
 
       <ul className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item, i) => item.pieces && (
-          <li key={item.pieces.id} className={item.status === "dismissed" ? "opacity-40" : ""}>
+          <li key={item.pieces.id}>
             <Link href={`/catalogue/${item.pieces.id}?set=${set.id}`} className="block">
-              <div className={`aspect-square overflow-hidden rounded bg-neutral-100 ${item.status === "chosen" ? "ring-4 ring-amber-500" : ""}`}>
+              <div className={`aspect-square overflow-hidden rounded bg-line/40 ${item.status === "chosen" ? "ring-4 ring-gold" : ""} ${item.status === "dismissed" ? "opacity-40 grayscale" : ""}`}>
                 {thumbs[i] && urls[thumbs[i]!] && (
                   // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
                   <img src={urls[thumbs[i]!]} alt="" className="h-full w-full object-cover" />
                 )}
               </div>
               <span className="mt-1 block">{item.pieces.title}</span>
-              <span className="block text-sm opacity-70">
+              <span className="block text-sm text-muted">
                 {formatPrice(item.pieces.price)}
-                {item.status === "chosen" && " · Chosen"}
+                {item.status === "chosen" && <span className="text-gold-ink"> · Chosen</span>}
                 {item.status === "dismissed" && " · Set aside"}
               </span>
             </Link>
@@ -68,9 +68,9 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
         ))}
       </ul>
 
-      <details className="rounded border p-4">
+      <details className="rounded-lg border border-line bg-pearl p-4">
         <summary className="cursor-pointer">Add a one-off piece to this set</summary>
-        <p className="my-3 text-sm opacity-70">It won&apos;t appear in the catalogue. You&apos;ll add photos next.</p>
+        <p className="my-3 text-sm text-muted">It won&apos;t appear in the catalogue. You&apos;ll add photos next.</p>
         <PieceForm action={addOneOff.bind(null, set.id)} inCatalogue={false}
           name="Add one-off piece" submitLabel="Add one-off piece" />
       </details>

@@ -50,6 +50,8 @@ test("customer chooses, changes their mind, then the set locks", async ({ page }
 
   const thanks = page.getByRole("region", { name: "Thank you" });
   await expect(thanks).toBeVisible();
+  // Focus follows the view swap so keyboard and screen-reader users aren't stranded.
+  await expect(page.getByRole("heading", { name: "Thank you" })).toBeFocused();
   await expect(thanks.getByRole("listitem")).toHaveCount(2);
   expect(await statuses()).toEqual(["chosen", "chosen", "dismissed"]);
 

@@ -4,7 +4,7 @@ type Piece = {
 };
 
 const field = "flex flex-col gap-1";
-const input = "rounded border px-3 py-2";
+const input = "w-full";
 
 // Shared by the catalogue (new/edit) and one-off pieces added while building a set.
 export function PieceForm({
@@ -38,7 +38,7 @@ export function PieceForm({
       <label className={`${field} sm:col-span-2`}>Description
         <textarea name="description" rows={3} defaultValue={piece.description ?? ""} className={input} />
       </label>
-      <button className="rounded bg-black px-4 py-2 text-white sm:col-span-2">{submitLabel}</button>
+      <button className="btn btn-primary sm:col-span-2">{submitLabel}</button>
     </form>
   );
 }

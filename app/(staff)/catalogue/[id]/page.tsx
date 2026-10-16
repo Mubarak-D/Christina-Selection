@@ -41,7 +41,7 @@ export default async function PiecePage({
               <img src={urls[m.path]} alt={piece.title} className="aspect-square w-full rounded object-cover" />
             )}
             <form action={deleteMedia.bind(null, m.id)}>
-              <button className="text-sm text-red-700">Remove</button>
+              <button className="text-sm text-danger">Remove</button>
             </form>
           </li>
         ))}

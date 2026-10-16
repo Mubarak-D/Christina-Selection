@@ -4,7 +4,7 @@ import { getPublicSet } from "@/lib/public-set";
 import { SelectionForm } from "./SelectionForm";
 
 export const metadata: Metadata = {
-  title: "Your selection — Christina Jewellers",
+  title: "Your selection | Christina Jewellers",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };

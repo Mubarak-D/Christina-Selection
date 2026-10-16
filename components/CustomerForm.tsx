@@ -9,7 +9,7 @@ type Customer = {
 };
 
 const field = "flex flex-col gap-1";
-const input = "rounded border px-3 py-2";
+const input = "w-full";
 
 export function CustomerForm({ customer }: { customer?: Customer }) {
   const router = useRouter();
@@ -39,8 +39,8 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
       <label className={`${field} sm:col-span-2`}>Notes
         <textarea name="notes" rows={3} defaultValue={customer?.notes ?? ""} className={input} />
       </label>
-      {error && <p role="alert" className="text-red-700 sm:col-span-2">{error}</p>}
-      <button disabled={pending} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50 sm:col-span-2">
+      {error && <p role="alert" className="text-danger sm:col-span-2">{error}</p>}
+      <button disabled={pending} className="btn btn-primary sm:col-span-2">
         Save customer
       </button>
     </form>

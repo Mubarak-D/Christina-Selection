@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CustomerForm } from "@/components/CustomerForm";
 
-const day = (t: string | null) => (t ? new Date(t).toLocaleDateString("en-LK") : "—");
+const day = (t: string | null) => (t ? new Date(t).toLocaleDateString("en-LK") : "-");
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,7 +20,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     <>
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl">{customer.name}</h1>
-        <span className="opacity-70">{customer.phone}</span>
+        <span className="text-muted">{customer.phone}</span>
       </div>
 
       <h2 className="mb-2 text-xl">Sets</h2>
@@ -35,7 +35,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             <tr key={s.id} className="border-t">
               <td className="py-2"><Link href={`/sets/${s.id}`} className="underline">{s.title || "Selection"}</Link></td>
               <td>{day(s.sent_at)}</td>
-              <td>{s.submitted_at ? s.set_items.filter((i) => i.status === "chosen").length : "—"}</td>
+              <td>{s.submitted_at ? s.set_items.filter((i) => i.status === "chosen").length : "-"}</td>
               <td>{s.handled_at ? "Handled" : s.submitted_at ? "Chosen" : s.sent_at ? "Waiting" : "Not sent"}</td>
             </tr>
           ))}

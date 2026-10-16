@@ -29,14 +29,14 @@ export default async function DashboardPage() {
           const rows = (alerts ?? []).filter((a) => a.kind === s.kind);
           return (
             <section key={s.kind} aria-label={s.title}>
-              <h2 className="mb-2 text-lg">{s.title} {rows.length > 0 && <span className="opacity-60">({rows.length})</span>}</h2>
-              {!rows.length && <p className="text-sm opacity-60">{s.empty}</p>}
+              <h2 className="mb-2 text-lg">{s.title} {rows.length > 0 && <span className="text-muted">({rows.length})</span>}</h2>
+              {!rows.length && <p className="text-sm text-muted">{s.empty}</p>}
               <ul className="divide-y">
                 {rows.map((a) => (
                   <li key={`${a.kind}-${a.set_id ?? a.customer_id}-${a.label}`}>
                     <Link href={a.set_id ? `/sets/${a.set_id}` : `/customers/${a.customer_id}`} className="block py-2">
                       <span className="block">{a.customer_name}</span>
-                      <span className="block text-sm opacity-70">{when(a)}</span>
+                      <span className="block text-sm text-muted">{when(a)}</span>
                     </Link>
                   </li>
                 ))}

@@ -47,8 +47,8 @@ export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; next
         <input type="file" accept="image/*,video/*" multiple disabled={busy}
           onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
       </label>
-      <p className="text-sm opacity-70">Max 50 MB per file.{busy && " Uploading…"}</p>
-      {error && <p role="alert" className="text-red-700">{error}</p>}
+      <p className="text-sm text-muted">Max 50 MB per file.{busy && " Uploading…"}</p>
+      {error && <p role="alert" className="text-danger">{error}</p>}
     </div>
   );
 }

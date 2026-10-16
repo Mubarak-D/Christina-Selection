@@ -1,0 +1,30 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const NAV = [
+  { href: "/", label: "Dashboard" },
+  { href: "/customers", label: "Customers" },
+  { href: "/catalogue", label: "Catalogue" },
+  { href: "/sets/new", label: "New set" },
+];
+
+export function StaffNav({ newChoices }: { newChoices: number }) {
+  const path = usePathname();
+  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  return (
+    <nav className="flex flex-wrap gap-x-6 gap-y-2">
+      {NAV.map((n) => (
+        <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
+          className="eyebrow inline-flex min-h-11 items-center border-b border-transparent transition-colors hover:text-ink aria-[current=page]:border-gold aria-[current=page]:text-ink">
+          {n.label}
+          {n.href === "/" && newChoices > 0 && " "}
+          {n.href === "/" && newChoices > 0 && (
+            <span className="rounded-full bg-gold px-2 py-0.5 tracking-normal text-pearl">({newChoices})</span>
+          )}
+        </Link>
+      ))}
+    </nav>
+  );
+}

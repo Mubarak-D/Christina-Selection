@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
+/* Tokens: see DESIGN.md */
+@theme {
+  --color-ivory: #faf7f0;
+  --color-pearl: #ffffff;
+  --color-ink: #1c1917;
+  --color-muted: #57534e;
+  --color-line: #e7e1d6;
+  --color-gold: #a16207;
+  --color-gold-ink: #8a5a0b;
+  --color-danger: #b42318;
+
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --dur-fast: 180ms;
+  --dur-normal: 350ms;
+  --dur-slow: 600ms;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background: var(--color-ivory);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.47;
   }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: 0.04em; }
+  :focus-visible { outline: 2px solid var(--color-gold-ink); outline-offset: 2px; }
+  ::selection { background: color-mix(in srgb, var(--color-gold) 22%, transparent); color: var(--color-ink); }
+  input, textarea { caret-color: var(--color-gold); }
+  .price, td, time { font-variant-numeric: tabular-nums lining-nums; }
+  input[type="file"]::file-selector-button {
+    margin-right: 1rem; min-height: 40px; padding: 0.4rem 1.2rem; border-radius: 9999px;
+    border: 1px solid var(--color-ink); background: transparent; color: var(--color-ink); font: inherit; cursor: pointer;
+  }
+  input:not([type="checkbox"]):not([type="file"]), select, textarea {
+    min-height: 44px;
+    border: 1px solid var(--color-line);
+    border-radius: 8px;
+    background: var(--color-pearl);
+    padding: 0.5rem 0.75rem;
+    transition: border-color var(--dur-fast) var(--ease-smooth);
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--color-gold); }
+  input[type="checkbox"] { accent-color: var(--color-gold); width: 1.1rem; height: 1.1rem; }
+  label { font-size: 0.9rem; color: var(--color-muted); }
+  label > input, label > select, label > textarea { color: var(--color-ink); font-size: 1rem; }
+  a { text-underline-offset: 3px; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .display { font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+  /* Brand mark: its own bar, never a label stacked on a heading. */
+  .wordmark { font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.32em; font-size: 0.95rem; }
+  .eyebrow { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.2em; color: var(--color-muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 44px; padding: 0.6rem 1.4rem; border-radius: 9999px;
+    font-size: 0.95rem; font-weight: 500; letter-spacing: 0.02em;
+    transition: transform var(--dur-fast) var(--ease-smooth), background-color var(--dur-fast) var(--ease-smooth),
+      color var(--dur-fast) var(--ease-smooth), border-color var(--dur-fast) var(--ease-smooth);
+    cursor: pointer;
+  }
+  .btn:active:not(:disabled) { transform: scale(0.95); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--color-ink); color: var(--color-pearl); }
+  .btn-primary:hover:not(:disabled) { background: #000; }
+  .btn-outline { border: 1px solid var(--color-ink); color: var(--color-ink); background: transparent; }
+  .btn-outline:hover:not(:disabled) { background: var(--color-ink); color: var(--color-pearl); }
+  .btn-gold { background: var(--color-gold); color: var(--color-pearl); border: 1px solid var(--color-gold); }
+
+  /* Scroll reveal: Reveal.tsx sets data-reveal only on off-screen elements, so server HTML stays visible. */
+  [data-reveal] { transition: opacity var(--dur-slow) var(--ease-smooth), transform var(--dur-slow) var(--ease-smooth); }
+  [data-reveal="pending"] { opacity: 0; transform: translateY(16px); }
+
+  .pop { animation: pop var(--dur-fast) var(--ease-bounce); }
+  .rise-in { animation: rise-in var(--dur-normal) var(--ease-smooth) both; }
+  .fade-out { animation: fade-out var(--dur-fast) var(--ease-smooth) both; }
+  .slide-up { animation: slide-up var(--dur-normal) var(--ease-smooth) both; }
+  /* Thank-you moment: a gold hairline draws out from the centre under the heading. */
+  .draw-line { display: block; width: 4rem; height: 1px; margin: 1.25rem auto 0; background: var(--color-gold);
+    transform-origin: center; animation: draw-line var(--dur-slow) var(--ease-smooth) 0.15s both; }
 }
+
+@keyframes pop { 50% { transform: scale(1.04); } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(16px); } }
+@keyframes fade-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes slide-up { from { transform: translateY(100%); } }
+@keyframes draw-line { from { transform: scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+  [data-reveal] { transition: opacity 150ms linear; }
+  [data-reveal="pending"] { transform: none; }
+  .btn:active:not(:disabled) { transform: none; }
+  .rise-in { animation: fade 150ms linear both !important; }
+}
+@keyframes fade { from { opacity: 0; } }

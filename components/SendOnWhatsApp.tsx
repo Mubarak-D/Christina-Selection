@@ -8,7 +8,7 @@ export function SendOnWhatsApp({ setId, href, url }: { setId: string; href: stri
   return (
     <div className="flex flex-wrap items-center gap-3">
       <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => markSent(setId)}
-        className="rounded bg-green-700 px-4 py-2 text-white">
+        className="btn btn-primary">
         Send on WhatsApp
       </a>
       <button type="button" className="underline" onClick={async () => {
