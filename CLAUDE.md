@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 Internal tool for Christina Jewellers. Staff send a customer a curated set of jewellery pieces (photos, video, details) as a private link over WhatsApp; the customer picks the pieces they want on their phone; staff see the choice and the rest of the set is marked dismissed. Also holds customer records and shows alerts.
 
-Status: not yet scaffolded. Update the Commands section once it is. Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
+Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 
 ## Stack
 - Next.js (App Router, TypeScript, Tailwind, `@supabase/ssr`), deployed on Netlify (Vercel is not available to the user).
@@ -36,4 +36,14 @@ Status: not yet scaffolded. Update the Commands section once it is. Full design:
 - Customer data is personal data: never log phone numbers or put them in URLs other than the `wa.me` link.
 
 ## Commands
-TBD after scaffolding (expected: `npm run dev`, `npm run build`, `npm run lint`).
+- `npm run dev`: local app at http://localhost:3000, using the `cj-dev` Supabase project from `.env.local`
+- `npm run build`, `npm run lint`
+- `npm test`: Vitest. Unit tests in `tests/unit`, DB tests in `tests/db` (hit `cj-dev`). One file: `npm test tests/unit/phone.test.ts`
+- `npm run e2e`: Playwright. One spec: `npm run e2e -- e2e/customer.spec.ts`
+- `npx supabase db push`: apply `supabase/migrations/*.sql` to the linked project (`npx supabase link --project-ref <ref>` first)
+
+There are two Supabase projects: `cj-dev` (dev and tests) and `cj-prod` (live). Tests must never point at `cj-prod`.
+
+This is Next.js 16: read `AGENTS.md` and the docs in `node_modules/next/dist/docs/` before using an API you're unsure of.
+
+The build plan and progress: `docs/superpowers/plans/2026-10-16-selection-app.md`.
