@@ -217,6 +217,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           due: string | null
+          is_new: boolean | null
           kind: string | null
           label: string | null
           set_id: string | null

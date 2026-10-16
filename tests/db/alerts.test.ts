@@ -33,14 +33,14 @@ describe("alerts view", () => {
   test("new choice: submitted and unseen", async () => {
     const c = await customer();
     const s = await setFor(c, { sent_at: ago(1), submitted_at: ago(0) });
-    expect(await alertsFor(c)).toMatchObject([{ kind: "new_choice", set_id: s, customer_name: "TEST alerts" }]);
+    expect(await alertsFor(c)).toMatchObject([{ kind: "new_choice", set_id: s, customer_name: "TEST alerts", is_new: true }]);
   });
 
-  test("handled or seen sets are not new choices", async () => {
+  test("a seen choice stays listed (no longer new) until it is handled", async () => {
     const c = await customer();
-    await setFor(c, { sent_at: ago(1), submitted_at: ago(0), handled_at: ago(0) });
-    await setFor(c, { sent_at: ago(1), submitted_at: ago(0), seen_at: ago(0) });
-    expect(await alertsFor(c)).toEqual([]);
+    const seen = await setFor(c, { sent_at: ago(1), submitted_at: ago(0), seen_at: ago(0) });
+    await setFor(c, { sent_at: ago(1), submitted_at: ago(0), seen_at: ago(0), handled_at: ago(0) });
+    expect(await alertsFor(c)).toMatchObject([{ kind: "new_choice", set_id: seen, is_new: false }]);
   });
 
   test("no reply after 3 days, not before", async () => {

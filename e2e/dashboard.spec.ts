@@ -38,15 +38,22 @@ test.afterAll(async () => {
 test("dashboard shows each kind of alert, and a seen choice drops off", async ({ page }) => {
   await page.goto("/");
   const section = (name: string) => page.getByRole("region", { name });
-  await expect(section("New choices").getByText(names.chose)).toBeVisible();
+  await expect(section("Customer choices").getByText(names.chose)).toBeVisible();
   await expect(section("No reply yet").getByText(names.quiet)).toBeVisible();
   await expect(section("Coming up").getByText(names.due)).toBeVisible();
   await expect(page.getByRole("link", { name: /Dashboard \(\d+ new\)/ })).toBeVisible();
 
-  await section("New choices").getByRole("link", { name: new RegExp(names.chose) }).click();
+  await section("Customer choices").getByRole("link", { name: new RegExp(names.chose) }).click();
   await expect(page).toHaveURL(new RegExp(`/sets/${newChoiceSet}$`));
 
+  // After opening it, the choice stays until handled, just without the New tag.
   await page.goto("/");
-  await expect(section("No reply yet").getByText(names.quiet)).toBeVisible();
-  await expect(section("New choices").getByText(names.chose)).toHaveCount(0);
+  const row = section("Customer choices").getByRole("link", { name: new RegExp(names.chose) });
+  await expect(row).toBeVisible();
+  await expect(row.getByText("New", { exact: true })).toHaveCount(0);
+  await page.goto(`/sets/${newChoiceSet}`);
+  await page.getByRole("button", { name: "Mark handled" }).click();
+  await expect(page.getByRole("button", { name: "Reopen" })).toBeVisible();
+  await page.goto("/");
+  await expect(section("Customer choices").getByText(names.chose)).toHaveCount(0);
 });

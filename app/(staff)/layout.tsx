@@ -13,7 +13,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login");
   const { count: newChoices } = await supabase
-    .from("alerts").select("*", { count: "exact", head: true }).eq("kind", "new_choice");
+    .from("alerts").select("*", { count: "exact", head: true }).eq("kind", "new_choice").eq("is_new", true);
 
   return (
     <div className="min-h-screen">

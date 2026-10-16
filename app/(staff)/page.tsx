@@ -7,7 +7,7 @@ import { formatShortDate } from "@/lib/dates";
 type Alert = Tables<"alerts">;
 
 const SECTIONS = [
-  { kind: "new_choice", title: "New choices", empty: "No new choices. They'll appear here as customers choose.", Icon: Sparkle },
+  { kind: "new_choice", title: "Customer choices", empty: "Nothing waiting. Choices appear here until you mark them handled.", Icon: Sparkle },
   { kind: "no_reply", title: "No reply yet", empty: "Everyone has replied within 3 days.", Icon: Clock },
   { kind: "deadline", title: "Coming up", empty: "No deadlines in the next 7 days.", Icon: Calendar },
 ] as const;
@@ -66,7 +66,10 @@ export default async function DashboardPage() {
                     <Link href={a.set_id ? `/sets/${a.set_id}` : `/customers/${a.customer_id}`}
                       className="group flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-ivory">
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate">{a.customer_name}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="truncate">{a.customer_name}</span>
+                          {a.is_new && <span className="shrink-0 rounded-full bg-gold px-2 py-0.5 text-[11px] text-pearl">New</span>}
+                        </span>
                         <span className={`block text-sm ${a.label === "Overdue" ? "text-danger" : "text-muted"}`}>{when(a)}</span>
                       </span>
                       <span className="text-muted transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5"><ChevronRight /></span>
