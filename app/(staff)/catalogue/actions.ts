@@ -9,8 +9,8 @@ const text = (fd: FormData, k: string) => {
   return v === "" ? null : v;
 };
 const num = (fd: FormData, k: string) => {
-  const v = text(fd, k);
-  return v === null ? null : Number(v);
+  const n = Number(text(fd, k) ?? NaN);
+  return Number.isFinite(n) ? n : null; // blank or malformed → empty, not a failed save
 };
 
 // Inserts, or updates when the form carries an id. One-offs send in_catalogue=false.

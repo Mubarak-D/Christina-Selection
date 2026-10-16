@@ -25,6 +25,12 @@ describe("RLS", () => {
     expect(error).not.toBeNull();
   });
 
+  test("media bucket only accepts images and videos", async () => {
+    const res = await service().storage.from("media")
+      .upload(`test/${Date.now()}.html`, new Blob(["<script>alert(1)</script>"], { type: "text/html" }), { contentType: "text/html" });
+    expect(res.error).not.toBeNull();
+  });
+
   test("media bucket is private", async () => {
     const { data, error } = await service().storage.getBucket("media");
     expect(error).toBeNull();

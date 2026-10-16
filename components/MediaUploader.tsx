@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { mediaPath } from "@/lib/media";
 
 const MAX_BYTES = 50 * 1024 * 1024; // Supabase free-plan per-file limit
 
@@ -24,8 +25,7 @@ export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; next
     const supabase = createBrowserClient();
     try {
       for (const [i, file] of list.entries()) {
-        const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-        const path = `${pieceId}/${crypto.randomUUID()}.${ext}`;
+        const path = mediaPath(pieceId, file.name);
         const up = await supabase.storage.from("media").upload(path, file, { contentType: file.type });
         if (up.error) throw up.error;
         const kind = file.type.startsWith("video/") ? "video" : "image";
