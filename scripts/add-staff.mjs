@@ -18,7 +18,7 @@ if (listError) throw listError;
 let user = list.users.find((u) => u.email?.toLowerCase() === email);
 if (!user) {
   const { data, error } = await db.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/accept`, // works with the default invite email
   });
   if (error) throw error;
   user = data.user;
