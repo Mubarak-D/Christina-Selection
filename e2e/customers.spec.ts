@@ -23,7 +23,7 @@ test("add a customer, then refuse the same number twice", async ({ page }) => {
   await expect(page.getByText(e164)).toBeVisible();
 
   await page.goto("/customers");
-  await page.getByLabel("Search").fill(local.slice(-6));
+  await page.getByLabel("Search").fill(`${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`); // typed the local way
   await page.getByLabel("Search").press("Enter");
   await expect(page.getByRole("link", { name: new RegExp(name) })).toBeVisible();
 

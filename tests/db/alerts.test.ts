@@ -5,9 +5,10 @@ const db = () => service();
 const created: string[] = [];
 afterAll(() => cleanup({ customers: created }));
 
-// DB dates are UTC; build them the same way.
+// Alert dates are Sri Lanka dates.
+// "Today" in Colombo (UTC+5:30), matching the alerts view.
 const dayOffset = (days: number, yearsBack = 0) => {
-  const d = new Date();
+  const d = new Date(Date.now() + 5.5 * 3_600_000);
   d.setUTCDate(d.getUTCDate() + days);
   d.setUTCFullYear(d.getUTCFullYear() - yearsBack);
   return d.toISOString().slice(0, 10);
@@ -63,6 +64,19 @@ describe("alerts view", () => {
     const old = await setFor(c, { sent_at: ago(4) });
     await setFor(c, { sent_at: ago(2) });
     expect(await alertsFor(c)).toMatchObject([{ kind: "no_reply", set_id: old }]);
+  });
+
+  test("a handled set is not 'no reply' even if the customer never used the link", async () => {
+    const c = await customer();
+    await setFor(c, { sent_at: ago(5), handled_at: ago(1) });
+    expect(await alertsFor(c)).toEqual([]);
+  });
+
+  test("dates are Sri Lanka dates (UTC+5:30)", async () => {
+    const c = await customer();
+    // 19:30 UTC on 16 Oct is 01:00 on 17 Oct in Colombo.
+    await setFor(c, { sent_at: "2026-10-15T10:00:00Z", submitted_at: "2026-10-16T19:30:00Z" });
+    expect(await alertsFor(c)).toMatchObject([{ kind: "new_choice", due: "2026-10-17" }]);
   });
 
   test("birthday within 7 days", async () => {

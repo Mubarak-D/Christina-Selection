@@ -1,4 +1,5 @@
 import { test, expect, devices } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { service } from "./helpers";
 
 // Phone-sized, touch-enabled Chromium (customers open the link on their phones).
@@ -71,4 +72,27 @@ test("customer chooses, changes their mind, then the set locks", async ({ page }
 test("an unknown link says so", async ({ page }) => {
   await page.goto("/s/nope");
   await expect(page.getByText("This link isn't valid")).toBeVisible();
+});
+
+test("expired photo links refresh themselves", async ({ page }) => {
+  // Give the first piece a photo, then make its first image request fail as if the signed URL had expired.
+  const path = `${ids[0]}/expiry-test.jpg`;
+  await service().storage.from("media").upload(path, readFileSync("e2e/fixtures/ring.jpg"), { contentType: "image/jpeg", upsert: true });
+  await service().from("piece_media").insert({ piece_id: ids[0], path, kind: "image" });
+  await service().from("selection_sets").update({ handled_at: null, submitted_at: null }).eq("id", setId);
+  try {
+    let failed = false;
+    await page.route("**/storage/v1/object/sign/**", (route) => {
+      if (failed) return route.continue();
+      failed = true;
+      return route.fulfill({ status: 400, body: "expired" });
+    });
+    await page.goto(`/s/${token}`);
+    const img = page.getByRole("img", { name: titles[0] });
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth), { timeout: 15_000 })
+      .toBeGreaterThan(0);
+  } finally {
+    await service().from("piece_media").delete().eq("path", path);
+    await service().storage.from("media").remove([path]);
+  }
 });

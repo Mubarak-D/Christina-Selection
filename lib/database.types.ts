@@ -195,6 +195,21 @@ export type Database = {
           },
         ]
       }
+      staff: {
+        Row: {
+          added_at: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       alerts: {
@@ -210,6 +225,7 @@ export type Database = {
       }
     }
     Functions: {
+      is_staff: { Args: never; Returns: boolean }
       next_occurrence: { Args: { d: string; today?: string }; Returns: string }
       submit_selection: {
         Args: { p_chosen: string[]; p_token: string }

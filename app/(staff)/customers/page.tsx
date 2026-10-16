@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { phoneSearchDigits } from "@/lib/phone";
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
@@ -7,7 +8,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const term = q.replace(/[,()%*\\]/g, "").trim();
   const supabase = await createClient();
   let query = supabase.from("customers").select("id,name,phone").order("name").limit(100);
-  if (term) query = query.or(`name.ilike.%${term}%,phone.ilike.%${term}%`);
+  const digits = phoneSearchDigits(term);
+  if (term) query = query.or(`name.ilike.%${term}%${digits ? `,phone.ilike.%${digits}%` : ""}`);
   const { data: customers } = await query;
 
   return (

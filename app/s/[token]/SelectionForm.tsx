@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PublicItem, PublicSet } from "@/lib/public-set";
 import { formatPrice } from "@/lib/format";
 import { Reveal } from "@/components/Reveal";
@@ -50,6 +51,22 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
     else setError("Couldn't send. Please try again.");
   }
 
+  // Signed media URLs last an hour; customers often reopen the WhatsApp tab later.
+  // On the first broken photo/video, fetch fresh URLs (selection state is kept).
+  const router = useRouter();
+  const refreshed = useRef(false);
+  const onMediaError = useCallback(() => {
+    if (refreshed.current) return;
+    refreshed.current = true;
+    router.refresh();
+  }, [router]);
+  // An image can fail before hydration attaches onError; catch those on mount.
+  useEffect(() => {
+    const broken = [...document.querySelectorAll<HTMLImageElement>("main img")]
+      .some((img) => img.complete && img.naturalWidth === 0);
+    if (broken) onMediaError();
+  }, [onMediaError]);
+
   const picked = set.items.filter((i) => chosen.has(i.pieceId));
 
   return (
@@ -90,7 +107,7 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
             {set.items.map((item, i) => (
               <li key={item.pieceId}>
                 <Reveal index={i}>
-                  <PieceCard item={item} selected={chosen.has(item.pieceId)} onToggle={() => toggle(item.pieceId)} />
+                  <PieceCard item={item} selected={chosen.has(item.pieceId)} onToggle={() => toggle(item.pieceId)} onMediaError={onMediaError} />
                 </Reveal>
               </li>
             ))}
@@ -109,7 +126,9 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
   );
 }
 
-function PieceCard({ item, selected, onToggle }: { item: PublicItem; selected: boolean; onToggle: () => void }) {
+function PieceCard({ item, selected, onToggle, onMediaError }: {
+  item: PublicItem; selected: boolean; onToggle: () => void; onMediaError: () => void;
+}) {
   const specs = [item.metal, item.karat, item.weightG != null ? `${item.weightG} g` : null, item.stones].filter(Boolean);
   return (
     <article>
@@ -119,10 +138,10 @@ function PieceCard({ item, selected, onToggle }: { item: PublicItem; selected: b
             {item.media.map((m, i) => (
               <div key={m.url} className="aspect-square w-full shrink-0 snap-center bg-line/40">
                 {m.kind === "video" ? (
-                  <video src={m.url} controls playsInline preload="metadata" className="h-full w-full object-cover" />
+                  <video src={m.url} controls playsInline preload="metadata" onError={onMediaError} className="h-full w-full object-cover" />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
-                  <img src={m.url} alt={i === 0 ? item.title : ""} loading={i === 0 ? "eager" : "lazy"}
+                  <img src={m.url} alt={i === 0 ? item.title : ""} loading={i === 0 ? "eager" : "lazy"} onError={onMediaError}
                     className="h-full w-full object-cover" />
                 )}
               </div>

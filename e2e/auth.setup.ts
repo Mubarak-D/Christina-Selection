@@ -12,8 +12,10 @@ setup("log in as staff", async ({ browser }) => {
   const admin = service().auth.admin;
   const { data: list } = await admin.listUsers();
   const existing = list.users.find((u) => u.email === EMAIL);
-  if (existing) await admin.updateUserById(existing.id, { password });
-  else await admin.createUser({ email: EMAIL, password, email_confirm: true });
+  const userId = existing
+    ? (await admin.updateUserById(existing.id, { password }), existing.id)
+    : (await admin.createUser({ email: EMAIL, password, email_confirm: true })).data.user!.id;
+  await service().from("staff").upsert({ user_id: userId });
 
   await logIn(browser, password, STAFF_STATE);
   await logIn(browser, password, SIGNOUT_STATE);

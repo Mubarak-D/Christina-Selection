@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CustomerForm } from "@/components/CustomerForm";
 
-const day = (t: string | null) => (t ? new Date(t).toLocaleDateString("en-LK") : "-");
+const day = (t: string | null) => (t ? new Date(t).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" }) : "-");
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

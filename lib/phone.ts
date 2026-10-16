@@ -15,5 +15,16 @@ export function normalisePhone(input: string, defaultCc = DEFAULT_COUNTRY_CODE):
     // a national number that happens to start with the cc digits would be misread — use libphonenumber if that bites.
     digits = defaultCc + digits;
   }
+  // "+94 (0)77…": drop the trunk 0 some people write after the country code.
+  if (digits.startsWith(`${defaultCc}0`)) digits = defaultCc + digits.slice(defaultCc.length + 1);
   return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : null;
+}
+
+// Digits to match against stored "+94…" numbers when staff search, however they typed it.
+export function phoneSearchDigits(term: string, defaultCc = DEFAULT_COUNTRY_CODE): string | null {
+  let d = term.replace(/\D/g, "");
+  if (d.length < 3) return null;
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.startsWith(defaultCc) && d.length > defaultCc.length + 6) d = d.slice(defaultCc.length);
+  return d.replace(/^0/, "");
 }

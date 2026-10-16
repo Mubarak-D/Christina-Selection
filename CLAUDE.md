@@ -29,9 +29,9 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
   - customer chose: `submitted_at` set and `seen_at` null
   - no reply: `sent_at` older than 3 days and `submitted_at` null
   - dates: birthday/anniversary within the next 7 days
-  - the windows are constants; alerts live in one `alerts` DB view
+  - the windows are constants; alerts live in one `alerts` DB view, using Sri Lanka dates (Asia/Colombo)
 - The customer page is the only public, unauthenticated surface. Validate the token server-side and expose only that set's data. Enforce access with Supabase RLS.
-- Staff signup is invite-only (public signup disabled in Supabase). RLS allows `authenticated` only; the customer page uses token-scoped server code with the service role key, which must never reach the browser.
+- Staff = accounts on the `staff` table (RLS uses `public.is_staff()`), not merely signed-in users. Add staff with `npm run staff:add -- email` (invites + lists them). Public signup should also be disabled in Supabase. RLS allows staff only; the customer page uses token-scoped server code with the service role key, which must never reach the browser.
 - Design: quiet luxury (awesome-design-md apple/bugatti references), warm ivory with a gold accent and a serif display font. Motion on the customer page only, always honouring `prefers-reduced-motion`.
 - Customer data is personal data: never log phone numbers or put them in URLs other than the `wa.me` link.
 
@@ -40,6 +40,7 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 - `npm run build`, `npm run lint`
 - `npm test`: Vitest. Unit tests in `tests/unit`, DB tests in `tests/db` (hit `cj-dev`). One file: `npm test tests/unit/phone.test.ts`
 - `npm run e2e`: Playwright. One spec: `npm run e2e -- e2e/customer.spec.ts`
+- `npm run types`: regenerate `lib/database.types.ts` after a migration
 - `npx supabase db push`: apply `supabase/migrations/*.sql` to the linked project (`npx supabase link --project-ref <ref>` first)
 
 There are two Supabase projects: `cj-dev` (dev and tests) and `cj-prod` (live). Tests must never point at `cj-prod`.
