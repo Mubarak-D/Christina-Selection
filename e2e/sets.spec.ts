@@ -37,6 +37,7 @@ test("build a set, add a one-off, send it and mark it handled", async ({ page, c
   await page.getByRole("button", { name: "Create set" }).click();
   await expect(page).toHaveURL(/\/sets\/[0-9a-f-]{36}$/);
   const setId = page.url().split("/").pop()!;
+  await expect(page.getByRole("status").filter({ hasText: "Set created" })).toBeVisible();
   const setUrl = page.url();
 
   await expect(page.getByText(`Ring ${tag}`)).toBeVisible();
@@ -68,6 +69,7 @@ test("build a set, add a one-off, send it and mark it handled", async ({ page, c
 
   await page.getByRole("button", { name: "Mark handled" }).click();
   await expect(page.getByRole("button", { name: "Reopen" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Marked handled" })).toBeVisible();
   await page.getByRole("button", { name: "Reopen" }).click();
   await expect(page.getByRole("button", { name: "Mark handled" })).toBeVisible();
 });

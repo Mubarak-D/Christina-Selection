@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { flash } from "@/lib/flash";
 import type { TablesUpdate } from "@/lib/database.types";
 import { savePiece } from "../catalogue/actions";
 
@@ -25,6 +26,7 @@ export async function createSet(formData: FormData): Promise<{ id: string }> {
 
 export async function createSetAndOpen(formData: FormData) {
   const { id } = await createSet(formData);
+  await flash("Set created");
   redirect(`/sets/${id}`);
 }
 
@@ -61,10 +63,12 @@ export async function markSeen(setId: string) {
 
 export async function markHandled(setId: string) {
   await stamp(setId, { handled_at: new Date().toISOString() });
+  await flash("Marked handled");
   revalidatePath(`/sets/${setId}`);
 }
 
 export async function reopen(setId: string) {
   await stamp(setId, { handled_at: null });
+  await flash("Set reopened");
   revalidatePath(`/sets/${setId}`);
 }

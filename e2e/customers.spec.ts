@@ -24,6 +24,7 @@ test("add a WhatsApp customer, find them, refuse the number twice", async ({ pag
   await expect(page).toHaveURL(/\/customers\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name })).toBeVisible();
   await expect(page.getByText(e164)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Customer saved" })).toBeVisible();
 
   await page.goto("/customers");
   await page.getByLabel("Search").fill(`${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`); // typed the local way

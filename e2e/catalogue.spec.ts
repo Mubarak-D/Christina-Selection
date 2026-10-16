@@ -26,6 +26,7 @@ test("add a piece with a photo and a video in one go", async ({ page }) => {
   await page.getByRole("button", { name: "Save piece" }).click();
   await expect(page).toHaveURL(/\/catalogue\/[0-9a-f-]{36}$/, { timeout: 20_000 });
   created.push(page.url().split("/").pop()!);
+  await expect(page.getByRole("status").filter({ hasText: "Piece saved" })).toBeVisible();
 
   const media = page.getByRole("list", { name: "Media" });
   // Uploads go over the network to Supabase; allow for a slow connection.

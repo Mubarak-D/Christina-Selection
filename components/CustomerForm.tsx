@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { saveCustomer } from "@/app/(staff)/customers/actions";
 import { keepValuesOnSubmit } from "@/lib/keep-form";
+import { toast } from "./Toaster";
 
 type Customer = {
   id: string; name: string; phone: string | null; email: string | null; deadline: string | null; notes: string | null;
@@ -17,6 +18,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
   const [error, action, pending] = useActionState(async (_prev: string | null, fd: FormData) => {
     const res = await saveCustomer(fd);
     if ("error" in res) return res.error;
+    toast("Customer saved");
     router.push(`/customers/${res.id}`);
     router.refresh();
     return null;

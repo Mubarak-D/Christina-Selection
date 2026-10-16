@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { flash } from "@/lib/flash";
 
 const text = (fd: FormData, k: string) => {
   const v = String(fd.get(k) ?? "").trim();
@@ -40,5 +41,6 @@ export async function deleteMedia(mediaId: string) {
   if (!data) return;
   await supabase.storage.from("media").remove([data.path]);
   await supabase.from("piece_media").delete().eq("id", mediaId);
+  await flash("Removed");
   revalidatePath(`/catalogue/${data.piece_id}`);
 }

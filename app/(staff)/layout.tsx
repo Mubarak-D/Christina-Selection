@@ -1,8 +1,10 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/login/actions";
 import { StaffNav } from "@/components/StaffNav";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Toaster } from "@/components/Toaster";
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   // proxy.ts already redirects, but pages must not rely on it alone.
@@ -25,6 +27,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-10">{children}</main>
+      <Toaster flashKey={(await cookies()).get("flash")?.value} />
     </div>
   );
 }

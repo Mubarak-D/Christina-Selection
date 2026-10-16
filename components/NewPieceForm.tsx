@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { PieceFields } from "./PieceForm";
 import { tooBig, uploadMedia } from "@/lib/upload";
+import { toast } from "./Toaster";
 
 type Chosen = { file: File; url: string };
 
@@ -25,6 +26,15 @@ export function NewPieceForm({
   // Free the preview URLs when files are removed or the form goes away.
   const urls = useRef<string[]>([]);
   useEffect(() => () => urls.current.forEach(URL.revokeObjectURL), []);
+  const fileInput = useRef<HTMLInputElement>(null);
+  // Files picked before hydration never fired onChange; take them once we're ready.
+  useEffect(() => {
+    const el = fileInput.current;
+    if (el?.files?.length) {
+      const files = el.files;
+      queueMicrotask(() => { add(files); el.value = ""; });
+    }
+  }, []);
 
   function add(files: FileList | null) {
     if (!files?.length) return;
@@ -66,6 +76,8 @@ export function NewPieceForm({
     } catch {
       setError("The piece was saved, but an upload failed. Add the rest on the piece's page.");
     }
+    const n = chosen.length;
+    toast(`${inCatalogue ? "Piece saved" : "One-off piece added"}${n ? ` with ${n} ${n === 1 ? "file" : "files"}` : ""}`);
     const to = destination.replace(":id", id);
     if (to === pathname) {
       form.current?.reset();
@@ -86,7 +98,7 @@ export function NewPieceForm({
       <div className="flex flex-col gap-2 sm:col-span-2">
         <label className="flex flex-col gap-1">
           Add photos or videos
-          <input name="files" type="file" accept="image/*,video/*" multiple disabled={!!status}
+          <input ref={fileInput} name="files" type="file" accept="image/*,video/*" multiple disabled={!!status}
             onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
         </label>
         <p className="text-sm text-muted">Max 50 MB per file. They upload when you save.</p>

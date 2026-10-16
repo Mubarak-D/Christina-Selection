@@ -7,6 +7,7 @@ import { MediaUploader } from "@/components/MediaUploader";
 import { SubmitButton } from "@/components/SubmitButton";
 import { PreviewTile, type ViewerItem } from "@/components/MediaViewer";
 import { deleteMedia, savePiece } from "../actions";
+import { flash } from "@/lib/flash";
 
 export default async function PiecePage({
   params, searchParams,
@@ -26,6 +27,7 @@ export default async function PiecePage({
   async function save(fd: FormData) {
     "use server";
     await savePiece(fd);
+    await flash("Piece saved");
   }
 
   return (
