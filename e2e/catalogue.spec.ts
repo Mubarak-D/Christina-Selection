@@ -26,8 +26,9 @@ test("add a piece with a photo and a video", async ({ page }) => {
 
   await page.getByLabel("Add photos or videos").setInputFiles(["e2e/fixtures/ring.jpg", "e2e/fixtures/ring.mp4"]);
   const media = page.getByRole("list", { name: "Media" });
-  await expect(media.locator("img")).toHaveCount(1);
-  await expect(media.locator("video")).toHaveCount(1);
+  // Uploads go over the network to Supabase; allow for a slow connection.
+  await expect(media.locator("img")).toHaveCount(1, { timeout: 20_000 });
+  await expect(media.locator("video")).toHaveCount(1, { timeout: 20_000 });
 
   await page.goto("/catalogue");
   await expect(page.getByRole("link", { name: new RegExp(`Test Ring ${tag}`) })).toBeVisible();
