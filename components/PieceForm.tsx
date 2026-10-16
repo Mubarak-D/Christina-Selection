@@ -8,12 +8,13 @@ const input = "rounded border px-3 py-2";
 
 // Shared by the catalogue (new/edit) and one-off pieces added while building a set.
 export function PieceForm({
-  action, piece = {}, inCatalogue = true, submitLabel = "Save piece",
+  action, piece = {}, inCatalogue = true, submitLabel = "Save piece", name,
 }: {
   action: (fd: FormData) => void | Promise<void>; piece?: Piece; inCatalogue?: boolean; submitLabel?: string;
+  name?: string;
 }) {
   return (
-    <form action={action} className="grid gap-4 sm:grid-cols-2">
+    <form action={action} aria-label={name} className="grid gap-4 sm:grid-cols-2">
       {piece.id && <input type="hidden" name="id" value={piece.id} />}
       <input type="hidden" name="in_catalogue" value={String(inCatalogue)} />
       <label className={`${field} sm:col-span-2`}>Title

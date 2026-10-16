@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
@@ -5,8 +6,11 @@ import { PieceForm } from "@/components/PieceForm";
 import { MediaUploader } from "@/components/MediaUploader";
 import { deleteMedia, savePiece } from "../actions";
 
-export default async function PiecePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PiecePage({
+  params, searchParams,
+}: { params: Promise<{ id: string }>; searchParams: Promise<{ set?: string }> }) {
   const { id } = await params;
+  const { set } = await searchParams;
   const supabase = await createClient();
   const { data: piece } = await supabase
     .from("pieces").select("*,piece_media(id,path,kind,sort)").eq("id", id).maybeSingle();
@@ -22,6 +26,7 @@ export default async function PiecePage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
+      {set && <Link href={`/sets/${set}`} className="mb-4 inline-block underline">Back to set</Link>}
       <h1 className="mb-4 text-2xl">{piece.title}</h1>
       <PieceForm action={save} piece={piece} inCatalogue={piece.in_catalogue} />
 

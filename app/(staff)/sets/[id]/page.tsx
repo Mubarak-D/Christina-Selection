@@ -1,0 +1,79 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { signedUrls } from "@/lib/public-set";
+import { formatPrice } from "@/lib/format";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { SITE_URL } from "@/lib/config";
+import { PieceForm } from "@/components/PieceForm";
+import { SendOnWhatsApp } from "@/components/SendOnWhatsApp";
+import { addOneOff, markHandled, markSeen, reopen } from "../actions";
+
+const ORDER = { chosen: 0, pending: 1, dismissed: 2 } as const;
+
+export default async function SetPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  await markSeen(id);
+  const supabase = await createClient();
+  const { data: set } = await supabase
+    .from("selection_sets")
+    .select("*, customers(id,name,phone), set_items(status, pieces(id,title,price,piece_media(path,kind,sort)))")
+    .eq("id", id)
+    .maybeSingle();
+  if (!set || !set.customers) notFound();
+
+  const customer = set.customers;
+  const items = [...set.set_items].sort(
+    (a, b) => ORDER[a.status as keyof typeof ORDER] - ORDER[b.status as keyof typeof ORDER]);
+  const thumbs = items.map((i) =>
+    i.pieces?.piece_media.filter((m) => m.kind === "image").sort((a, b) => a.sort - b.sort)[0]?.path);
+  const urls = await signedUrls(thumbs.filter((t): t is string => !!t));
+
+  const link = `${SITE_URL}/s/${set.token}`;
+  const firstName = customer.name.split(/\s+/)[0];
+  const status = set.handled_at ? "Handled" : set.submitted_at ? "Customer has chosen" : set.sent_at ? "Waiting for customer" : "Not sent yet";
+
+  return (
+    <>
+      <p className="mb-1 text-sm opacity-70">
+        <Link href={`/customers/${customer.id}`} className="underline">{customer.name}</Link> · {status}
+      </p>
+      <h1 className="mb-4 text-2xl">{set.title || "Selection"}</h1>
+
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        <SendOnWhatsApp setId={set.id} href={buildWhatsAppLink(customer.phone, link, firstName)} url={link} />
+        <form action={(set.handled_at ? reopen : markHandled).bind(null, set.id)}>
+          <button className="rounded border px-4 py-2">{set.handled_at ? "Reopen" : "Mark handled"}</button>
+        </form>
+      </div>
+
+      <ul className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {items.map((item, i) => item.pieces && (
+          <li key={item.pieces.id} className={item.status === "dismissed" ? "opacity-40" : ""}>
+            <Link href={`/catalogue/${item.pieces.id}?set=${set.id}`} className="block">
+              <div className={`aspect-square overflow-hidden rounded bg-neutral-100 ${item.status === "chosen" ? "ring-4 ring-amber-500" : ""}`}>
+                {thumbs[i] && urls[thumbs[i]!] && (
+                  // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
+                  <img src={urls[thumbs[i]!]} alt="" className="h-full w-full object-cover" />
+                )}
+              </div>
+              <span className="mt-1 block">{item.pieces.title}</span>
+              <span className="block text-sm opacity-70">
+                {formatPrice(item.pieces.price)}
+                {item.status === "chosen" && " · Chosen"}
+                {item.status === "dismissed" && " · Set aside"}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <details className="rounded border p-4">
+        <summary className="cursor-pointer">Add a one-off piece to this set</summary>
+        <p className="my-3 text-sm opacity-70">It won&apos;t appear in the catalogue. You&apos;ll add photos next.</p>
+        <PieceForm action={addOneOff.bind(null, set.id)} inCatalogue={false}
+          name="Add one-off piece" submitLabel="Add one-off piece" />
+      </details>
+    </>
+  );
+}
