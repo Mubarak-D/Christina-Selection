@@ -1,3 +1,4 @@
+import { BackLink } from "@/components/BackLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +19,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
+      <BackLink href="/customers" label="Customers" />
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl">{customer.name}</h1>
         <span className="flex flex-col text-right text-muted">

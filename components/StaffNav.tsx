@@ -17,11 +17,12 @@ export function StaffNav({ newChoices }: { newChoices: number }) {
     <nav className="flex flex-wrap gap-x-6 gap-y-2">
       {NAV.map((n) => (
         <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
+          aria-label={n.href === "/" && newChoices > 0 ? `Dashboard (${newChoices} new)` : undefined}
           className="eyebrow inline-flex min-h-11 items-center border-b border-transparent transition-colors hover:text-ink aria-[current=page]:border-gold aria-[current=page]:text-ink">
           {n.label}
           {n.href === "/" && newChoices > 0 && " "}
           {n.href === "/" && newChoices > 0 && (
-            <span className="rounded-full bg-gold px-2 py-0.5 tracking-normal text-pearl">({newChoices})</span>
+            <span className="rounded-full bg-gold px-2 py-0.5 tracking-normal text-pearl">{newChoices}</span>
           )}
         </Link>
       ))}

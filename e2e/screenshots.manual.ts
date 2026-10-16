@@ -10,7 +10,7 @@ const { viewport, userAgent, deviceScaleFactor, isMobile, hasTouch } = devices["
 
 test("capture", async ({ browser }) => {
   const db = service();
-  const { data: c } = await db.from("customers").insert({ name: "Nadia Perera", phone: "+94770009999" }).select().single();
+  const { data: c } = await db.from("customers").insert({ name: "Nadia Perera", phone: "+94770009999", email: "nadia@example.test", deadline: new Date(Date.now() + 4 * 864e5).toISOString().slice(0, 10) }).select().single();
   const specs = [
     { title: "Solitaire Ring", price: 285000, metal: "Yellow gold", karat: "22K", weight_g: 4.2, stones: "0.5ct diamond", description: "A single brilliant-cut diamond on a slim band." },
     { title: "Kandyan Bangle", price: 410000, metal: "Yellow gold", karat: "22K", weight_g: 18.6, stones: null, description: "Hand-engraved traditional motif." },
@@ -46,6 +46,8 @@ test("capture", async ({ browser }) => {
     const staff = await browser.newPage({ storageState: STAFF_STATE, viewport: { width: 1280, height: 860 } });
     await staff.goto("/");
     await staff.screenshot({ path: `${OUT}/4-staff-dashboard.png` });
+    await staff.goto("/customers");
+    await staff.screenshot({ path: `${OUT}/4b-staff-customers.png` });
     await staff.goto(`/sets/${s!.id}`);
     await staff.screenshot({ path: `${OUT}/5-staff-set.png` });
     await staff.goto("/catalogue");

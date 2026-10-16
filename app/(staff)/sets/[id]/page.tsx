@@ -1,3 +1,4 @@
+import { BackLink } from "@/components/BackLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -41,9 +42,8 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
 
   return (
     <>
-      <p className="mb-1 text-sm text-muted">
-        <Link href={`/customers/${customer.id}`} className="underline">{customer.name}</Link> · {status}
-      </p>
+      <BackLink href={`/customers/${customer.id}`} label={customer.name} />
+      <p className="mb-1 text-sm text-muted">{status}</p>
       <h1 className="mb-4 text-2xl">{set.title || "Selection"}</h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-4">

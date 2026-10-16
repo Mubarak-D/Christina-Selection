@@ -41,7 +41,7 @@ test("dashboard shows each kind of alert, and a seen choice drops off", async ({
   await expect(section("New choices").getByText(names.chose)).toBeVisible();
   await expect(section("No reply yet").getByText(names.quiet)).toBeVisible();
   await expect(section("Coming up").getByText(names.due)).toBeVisible();
-  await expect(page.getByRole("link", { name: /Dashboard \(\d+\)/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Dashboard \(\d+ new\)/ })).toBeVisible();
 
   await section("New choices").getByRole("link", { name: new RegExp(names.chose) }).click();
   await expect(page).toHaveURL(new RegExp(`/sets/${newChoiceSet}$`));

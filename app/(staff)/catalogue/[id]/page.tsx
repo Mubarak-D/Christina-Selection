@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
@@ -32,7 +32,7 @@ export default async function PiecePage({
 
   return (
     <>
-      {set && <Link href={`/sets/${set}`} className="mb-4 inline-block underline">Back to set</Link>}
+      {set ? <BackLink href={`/sets/${set}`} label="Back to set" /> : <BackLink href="/catalogue" label="Catalogue" />}
       <h1 className="mb-4 text-2xl">{piece.title}</h1>
       <PieceForm action={save} piece={piece} inCatalogue={piece.in_catalogue} />
 

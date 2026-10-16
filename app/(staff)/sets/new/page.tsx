@@ -1,3 +1,4 @@
+import { BackLink } from "@/components/BackLink";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatPrice } from "@/lib/format";
@@ -18,6 +19,7 @@ export default async function NewSetPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
+      <BackLink href={customer ? `/customers/${customer}` : "/"} label="Back" />
       <h1 className="mb-4 text-2xl">New set</h1>
       <form action={createSetAndOpen} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">Customer
