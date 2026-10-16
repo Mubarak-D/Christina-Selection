@@ -15,6 +15,7 @@ export async function signIn(_prev: string | null, formData: FormData): Promise<
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Only this device; staff stay signed in on their other devices.
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }

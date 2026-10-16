@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { STAFF_STATE } from "./helpers";
+import { SIGNOUT_STATE, STAFF_STATE } from "./helpers";
 
 test.describe("signed out", () => {
   test("staff pages redirect to login", async ({ page }) => {
@@ -21,7 +21,12 @@ test.describe("signed in", () => {
     await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
   });
 
-  test("sign out returns to login", async ({ page }) => {
+});
+
+test.describe("sign out", () => {
+  test.use({ storageState: SIGNOUT_STATE });
+
+  test("returns to login", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/login$/);
