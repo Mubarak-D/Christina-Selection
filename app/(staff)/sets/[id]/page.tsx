@@ -13,14 +13,17 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { PreviewTile, type ViewerItem } from "@/components/MediaViewer";
 import { addOneOff, deleteSet, markHandled, markSeen, removeFromSet, reopen } from "../actions";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { HandledDialog } from "@/components/HandledDialog";
 
 const ORDER = { chosen: 0, pending: 1, dismissed: 2 } as const;
 
 export default async function SetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // Record that staff have seen the customer's choice before rendering (sequential on purpose:
+  // running it alongside the page query let the dashboard read the old state).
+  await markSeen(id);
   const supabase = await createClient();
-  // Marking seen and loading the set don't depend on each other.
-  const [, { data: set }] = await Promise.all([markSeen(id), supabase
+  const [{ data: set }] = await Promise.all([supabase
     .from("selection_sets")
     .select("*, customers(id,name,phone,email), set_items(status, pieces(id,title,price,in_catalogue,piece_media(path,kind,sort)))")
     .eq("id", id)
@@ -52,9 +55,15 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
         <SendSet setId={set.id} url={link}
           whatsappHref={customer.phone ? buildWhatsAppLink(customer.phone, link, firstName) : null}
           emailHref={customer.email ? buildEmailLink(customer.email, link, firstName) : null} />
-        <form action={(set.handled_at ? reopen : markHandled).bind(null, set.id)}>
-          <SubmitButton className="btn btn-outline" pendingLabel="Saving…">{set.handled_at ? "Reopen" : "Mark handled"}</SubmitButton>
-        </form>
+        {set.handled_at ? (
+          <form action={reopen.bind(null, set.id)}>
+            <SubmitButton className="btn btn-outline" pendingLabel="Saving…">Reopen</SubmitButton>
+          </form>
+        ) : (
+          <HandledDialog action={markHandled.bind(null, set.id)}
+            items={items.flatMap((i) => i.pieces
+              ? [{ pieceId: i.pieces.id, title: i.pieces.title, price: i.pieces.price, chosen: i.status === "chosen" }] : [])} />
+        )}
         <ConfirmButton action={deleteSet.bind(null, set.id)} label="Delete set" className="eyebrow min-h-11 text-danger"
           title={`Delete ${set.title || "this set"}?`}
           message={`${oneOffs ? `This also deletes ${oneOffs} one-off ${oneOffs === 1 ? "piece" : "pieces"} made for it. ` : ""}Catalogue pieces stay in the catalogue. The customer's link will stop working.`} />

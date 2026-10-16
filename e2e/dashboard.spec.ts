@@ -53,6 +53,7 @@ test("dashboard shows each kind of alert, and a seen choice drops off", async ({
   await expect(row.getByText("New", { exact: true })).toHaveCount(0);
   await page.goto(`/sets/${newChoiceSet}`);
   await page.getByRole("button", { name: "Mark handled" }).click();
+  await page.getByRole("dialog", { name: "What did they buy?" }).getByRole("button", { name: "Mark handled" }).click();
   await expect(page.getByRole("button", { name: "Reopen" })).toBeVisible();
   await page.goto("/");
   await expect(section("Customer choices").getByText(names.chose)).toHaveCount(0);

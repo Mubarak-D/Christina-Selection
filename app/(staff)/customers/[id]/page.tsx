@@ -6,6 +6,7 @@ import { CustomerForm } from "@/components/CustomerForm";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { Chat, ChevronRight, Mail } from "@/components/Icons";
 import { formatDate } from "@/lib/dates";
+import { formatPrice } from "@/lib/format";
 import { deleteCustomer } from "../actions";
 
 const STATUS = {
@@ -19,13 +20,15 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const supabase = await createClient();
   // In parallel: each query is a round trip to the database.
-  const [{ data: customer }, { data: sets }] = await Promise.all([
+  const [{ data: customer }, { data: sets }, { data: sales }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", id).maybeSingle(),
     supabase.from("selection_sets")
       .select("id,title,created_at,sent_at,submitted_at,handled_at,set_items(status)")
       .eq("customer_id", id)
       .order("created_at", { ascending: false }),
+    supabase.from("sales").select("id,title,price,sold_at,set_id").eq("customer_id", id).order("sold_at", { ascending: false }),
   ]);
+  const total = (sales ?? []).reduce((sum, s) => sum + Number(s.price ?? 0), 0);
   if (!customer) notFound();
 
   return (
@@ -46,6 +49,25 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         </div>
         <Link href={`/sets/new?customer=${customer.id}`} className="btn btn-primary self-start">New set</Link>
       </div>
+
+      {!!sales?.length && (
+        <section aria-label="Purchases" className="mb-10">
+          <h2 className="mb-3 text-xl">Purchases</h2>
+          <ul className="flex flex-col divide-y divide-line rounded-xl border border-line bg-pearl px-4">
+            {sales.map((s) => (
+              <li key={s.id} className="flex items-baseline gap-4 py-3">
+                <span className="min-w-0 flex-1 truncate">{s.title}</span>
+                <span className="shrink-0 text-sm text-muted">{formatDate(s.sold_at)}</span>
+                <span className="price w-28 shrink-0 text-right">{formatPrice(s.price)}</span>
+              </li>
+            ))}
+            <li className="flex items-baseline justify-between py-3">
+              <span className="text-muted">Total ({sales.length} {sales.length === 1 ? "piece" : "pieces"})</span>
+              <span className="price text-gold-ink">{formatPrice(total)}</span>
+            </li>
+          </ul>
+        </section>
+      )}
 
       <h2 className="mb-3 text-xl">Sets</h2>
       {!sets?.length && (

@@ -68,6 +68,7 @@ test("build a set, add a one-off, send it and mark it handled", async ({ page, c
   ).not.toBeNull();
 
   await page.getByRole("button", { name: "Mark handled" }).click();
+  await page.getByRole("dialog", { name: "What did they buy?" }).getByRole("button", { name: "Mark handled" }).click();
   await expect(page.getByRole("button", { name: "Reopen" })).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Marked handled" })).toBeVisible();
   await page.getByRole("button", { name: "Reopen" }).click();

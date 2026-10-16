@@ -58,17 +58,36 @@ export async function markSent(setId: string) {
 // Called while rendering the set page, so it must not revalidate.
 export async function markSeen(setId: string) {
   const supabase = await createClient();
-  await supabase.from("selection_sets").update({ seen_at: new Date().toISOString() })
+  const { error } = await supabase.from("selection_sets").update({ seen_at: new Date().toISOString() })
     .eq("id", setId).not("submitted_at", "is", null).is("seen_at", null);
+  if (error) console.error("markSeen failed", setId, error.message); // don't block the page over it
 }
 
-export async function markHandled(setId: string) {
+// Marks the set handled and records what the customer bought (the ticked pieces).
+// Title and price come from the database at the time of sale, never from the form.
+export async function markHandled(setId: string, formData?: FormData) {
+  const supabase = await createClient();
+  const sold = new Set((formData?.getAll("sold") ?? []).map(String));
+  const { data: set, error } = await supabase.from("selection_sets")
+    .select("customer_id, set_items(piece_id, pieces(title, price))").eq("id", setId).single();
+  if (error) throw error;
+  const rows = set.set_items
+    .filter((i) => sold.has(i.piece_id) && i.pieces)
+    .map((i) => ({ customer_id: set.customer_id, set_id: setId, piece_id: i.piece_id, title: i.pieces!.title, price: i.pieces!.price }));
+  if (rows.length) {
+    const ins = await supabase.from("sales").insert(rows);
+    if (ins.error) throw ins.error;
+  }
   await stamp(setId, { handled_at: new Date().toISOString() });
-  await flash("Marked handled");
+  await flash(rows.length ? `Marked handled · ${rows.length} ${rows.length === 1 ? "sale" : "sales"} recorded` : "Marked handled");
   revalidatePath(`/sets/${setId}`);
 }
 
+// Undoes Mark handled, including the sales it recorded, so handling again can't double-count.
 export async function reopen(setId: string) {
+  const supabase = await createClient();
+  const del = await supabase.from("sales").delete().eq("set_id", setId);
+  if (del.error) throw del.error;
   await stamp(setId, { handled_at: null });
   await flash("Set reopened");
   revalidatePath(`/sets/${setId}`);

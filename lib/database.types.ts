@@ -115,6 +115,61 @@ export type Database = {
         }
         Relationships: []
       }
+      sales: {
+        Row: {
+          created_by: string | null
+          customer_id: string
+          id: string
+          piece_id: string | null
+          price: number | null
+          set_id: string | null
+          sold_at: string
+          title: string
+        }
+        Insert: {
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          piece_id?: string | null
+          price?: number | null
+          set_id?: string | null
+          sold_at?: string
+          title: string
+        }
+        Update: {
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          piece_id?: string | null
+          price?: number | null
+          set_id?: string | null
+          sold_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "selection_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       selection_sets: {
         Row: {
           created_at: string
