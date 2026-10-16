@@ -43,7 +43,9 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 - `npm run types`: regenerate `lib/database.types.ts` after a migration
 - `npx supabase db push`: apply `supabase/migrations/*.sql` to the linked project (`npx supabase link --project-ref <ref>` first)
 
-There are two Supabase projects: `cj-dev` (dev and tests) and `cj-prod` (live). Tests must never point at `cj-prod`.
+There are two Supabase projects: `cj-dev` (ref `pjiawyrdlltjpbohtsde`, dev and tests) and `cj-prod` (ref `onokcwhqspqildmtxdbp`, live, region Seoul). The CLI stays linked to `cj-dev`; to ship a migration, push to dev, then `npx supabase link --project-ref onokcwhqspqildmtxdbp && npx supabase db push`, then link back to dev. Tests must never point at `cj-prod`.
+
+Live site: https://funny-ganache-e126c2.netlify.app (Netlify site `funny-ganache-e126c2`, deploys from GitHub `main`; env vars point at `cj-prod`). `netlify.toml` declares `@netlify/plugin-nextjs` explicitly; without it Netlify skipped the runtime and every page 404'd.
 
 This is Next.js 16: read `AGENTS.md` and the docs in `node_modules/next/dist/docs/` before using an API you're unsure of.
 
