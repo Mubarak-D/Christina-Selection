@@ -15,14 +15,12 @@ export default function AcceptInvitePage() {
     const access_token = params.get("access_token");
     const refresh_token = params.get("refresh_token");
     history.replaceState(null, "", window.location.pathname); // don't leave tokens in the address bar
-    if (!access_token || !refresh_token) {
-      setFailed(true);
-      return;
-    }
-    createBrowserClient().auth.setSession({ access_token, refresh_token }).then(({ error }) => {
-      if (error) setFailed(true);
-      else router.replace("/account/password");
-    });
+    (async () => {
+      if (!access_token || !refresh_token) throw new Error("missing tokens");
+      const { error } = await createBrowserClient().auth.setSession({ access_token, refresh_token });
+      if (error) throw error;
+      router.replace("/account/password");
+    })().catch(() => setFailed(true));
   }, [router]);
 
   return (
