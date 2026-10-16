@@ -16,15 +16,17 @@ test.afterAll(async () => {
   if (created.length) await db.from("pieces").delete().in("id", created);
 });
 
-test("add a piece with a photo and a video", async ({ page }) => {
+test("add a piece with a photo and a video in one go", async ({ page }) => {
   await page.goto("/catalogue/new");
   await page.getByLabel("Title").fill(`Test Ring ${tag}`);
   await page.getByLabel("Price").fill("100");
+  // Files are picked before saving; they're shown and uploaded with the save.
+  await page.getByLabel("Add photos or videos").setInputFiles(["e2e/fixtures/ring.jpg", "e2e/fixtures/ring.mp4"]);
+  await expect(page.getByRole("list", { name: "Chosen files" }).getByRole("listitem")).toHaveCount(2);
   await page.getByRole("button", { name: "Save piece" }).click();
-  await expect(page).toHaveURL(/\/catalogue\/[0-9a-f-]{36}$/);
+  await expect(page).toHaveURL(/\/catalogue\/[0-9a-f-]{36}$/, { timeout: 20_000 });
   created.push(page.url().split("/").pop()!);
 
-  await page.getByLabel("Add photos or videos").setInputFiles(["e2e/fixtures/ring.jpg", "e2e/fixtures/ring.mp4"]);
   const media = page.getByRole("list", { name: "Media" });
   // Uploads go over the network to Supabase; allow for a slow connection.
   await expect(media.locator("img")).toHaveCount(1, { timeout: 20_000 });

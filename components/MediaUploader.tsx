@@ -2,41 +2,32 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createBrowserClient } from "@/lib/supabase/client";
-import { mediaPath } from "@/lib/media";
+import { tooBig, uploadMedia } from "@/lib/upload";
 
-const MAX_BYTES = 50 * 1024 * 1024; // Supabase free-plan per-file limit
-
-// Uploads straight from the browser to the private "media" bucket, then records the file.
+// On an existing piece: files upload as soon as they're chosen.
 export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; nextSort?: number }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
   async function upload(files: FileList | null) {
     if (!files?.length) return;
     setError(null);
     const list = Array.from(files);
-    if (list.some((f) => f.size > MAX_BYTES)) {
+    if (tooBig(list)) {
       setError("Max 50 MB per file. Trim or compress the video and try again.");
       return;
     }
-    setBusy(true);
-    const supabase = createBrowserClient();
     try {
       for (const [i, file] of list.entries()) {
-        const path = mediaPath(pieceId, file.name);
-        const up = await supabase.storage.from("media").upload(path, file, { contentType: file.type });
-        if (up.error) throw up.error;
-        const kind = file.type.startsWith("video/") ? "video" : "image";
-        const row = await supabase.from("piece_media").insert({ piece_id: pieceId, path, kind, sort: nextSort + i });
-        if (row.error) throw row.error;
+        setStatus(`Uploading ${i + 1} of ${list.length}…`);
+        await uploadMedia(pieceId, file, nextSort + i);
       }
       router.refresh();
     } catch {
       setError("Upload failed. Check your connection and try again.");
     } finally {
-      setBusy(false);
+      setStatus(null);
     }
   }
 
@@ -44,10 +35,10 @@ export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; next
     <div className="flex flex-col gap-2">
       <label className="flex flex-col gap-1">
         Add photos or videos
-        <input type="file" accept="image/*,video/*" multiple disabled={busy}
+        <input type="file" accept="image/*,video/*" multiple disabled={!!status}
           onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
       </label>
-      <p className="text-sm text-muted">Max 50 MB per file.{busy && " Uploading…"}</p>
+      <p className="text-sm text-muted" aria-live="polite">{status ?? "Max 50 MB per file."}</p>
       {error && <p role="alert" className="text-danger">{error}</p>}
     </div>
   );

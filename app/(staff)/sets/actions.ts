@@ -28,14 +28,15 @@ export async function createSetAndOpen(formData: FormData) {
   redirect(`/sets/${id}`);
 }
 
-// One-off piece for this set only: save details, then add photos on the piece page.
-export async function addOneOff(setId: string, formData: FormData) {
+// One-off piece for this set only (not listed in the catalogue); photos upload right after.
+export async function addOneOff(setId: string, formData: FormData): Promise<{ id: string }> {
   formData.set("in_catalogue", "false");
   const { id } = await savePiece(formData);
   const supabase = await createClient();
   const { error } = await supabase.from("set_items").insert({ set_id: setId, piece_id: id });
   if (error) throw error;
-  redirect(`/catalogue/${id}?set=${setId}`);
+  revalidatePath(`/sets/${setId}`);
+  return { id };
 }
 
 async function stamp(setId: string, fields: TablesUpdate<"selection_sets">, onlyIfNull?: "sent_at") {

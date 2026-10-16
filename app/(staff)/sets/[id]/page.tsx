@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/format";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { buildEmailLink } from "@/lib/email";
 import { SITE_URL } from "@/lib/config";
-import { PieceForm } from "@/components/PieceForm";
+import { NewPieceForm } from "@/components/NewPieceForm";
 import { SendSet } from "@/components/SendSet";
 import { SubmitButton } from "@/components/SubmitButton";
 import { addOneOff, markHandled, markSeen, reopen } from "../actions";
@@ -58,7 +58,7 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
               <div className={`aspect-square overflow-hidden rounded bg-line/40 ${item.status === "chosen" ? "ring-4 ring-gold" : ""} ${item.status === "dismissed" ? "opacity-40 grayscale" : ""}`}>
                 {thumbs[i] && urls[thumbs[i]!] && (
                   // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
-                  <img src={urls[thumbs[i]!]} alt="" className="h-full w-full object-cover" />
+                  <img src={urls[thumbs[i]!]} alt={item.pieces.title} className="h-full w-full object-cover" />
                 )}
               </div>
               <span className="mt-1 block">{item.pieces.title}</span>
@@ -74,8 +74,8 @@ export default async function SetPage({ params }: { params: Promise<{ id: string
 
       <details className="rounded-lg border border-line bg-pearl p-4">
         <summary className="cursor-pointer">Add a one-off piece to this set</summary>
-        <p className="my-3 text-sm text-muted">It won&apos;t appear in the catalogue. You&apos;ll add photos next.</p>
-        <PieceForm action={addOneOff.bind(null, set.id)} inCatalogue={false}
+        <p className="my-3 text-sm text-muted">It won&apos;t appear in the catalogue.</p>
+        <NewPieceForm save={addOneOff.bind(null, set.id)} destination={`/sets/${set.id}`} inCatalogue={false}
           name="Add one-off piece" submitLabel="Add one-off piece" />
       </details>
     </>

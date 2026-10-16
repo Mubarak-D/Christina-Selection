@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const text = (fd: FormData, k: string) => {
@@ -33,11 +32,6 @@ export async function savePiece(formData: FormData): Promise<{ id: string }> {
   if (error) throw error;
   revalidatePath("/catalogue");
   return { id: data.id };
-}
-
-export async function savePieceAndOpen(formData: FormData) {
-  const { id } = await savePiece(formData);
-  redirect(`/catalogue/${id}`);
 }
 
 export async function deleteMedia(mediaId: string) {

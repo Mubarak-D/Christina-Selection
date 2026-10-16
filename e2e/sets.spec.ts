@@ -21,6 +21,11 @@ test.afterAll(async () => {
   const db = service();
   await db.from("customers").delete().eq("id", customerId);
   await db.from("pieces").delete().in("id", pieceIds);
+  const { data: oneOffs } = await db.from("pieces").select("id").eq("title", `One-off ${tag}`);
+  for (const { id } of oneOffs ?? []) {
+    const { data: files } = await db.storage.from("media").list(id);
+    if (files?.length) await db.storage.from("media").remove(files.map((f) => `${id}/${f.name}`));
+  }
   await db.from("pieces").delete().eq("title", `One-off ${tag}`);
 });
 
@@ -41,11 +46,12 @@ test("build a set, add a one-off, send it and mark it handled", async ({ page, c
   await page.getByText("Add a one-off piece to this set").click();
   const oneOff = page.getByRole("form", { name: "Add one-off piece" });
   await oneOff.getByLabel("Title").fill(`One-off ${tag}`);
+  await oneOff.getByLabel("Add photos or videos").setInputFiles("e2e/fixtures/ring.jpg");
   await oneOff.getByRole("button", { name: "Add one-off piece" }).click();
-  await expect(page).toHaveURL(/\/catalogue\/[0-9a-f-]{36}/);
-  await page.getByRole("link", { name: "Back to set" }).click();
+  // Stays on the set; the one-off appears with its photo.
+  await expect(page.getByText(`One-off ${tag}`)).toBeVisible({ timeout: 20_000 });
   await expect(page).toHaveURL(setUrl);
-  await expect(page.getByText(`One-off ${tag}`)).toBeVisible();
+  await expect(page.getByRole("img", { name: `One-off ${tag}` })).toBeVisible();
 
   const send = page.getByRole("link", { name: "Send on WhatsApp" });
   const href = await send.getAttribute("href");

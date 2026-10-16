@@ -1,6 +1,6 @@
 import { SubmitButton } from "./SubmitButton";
 
-type Piece = {
+export type Piece = {
   id?: string; title?: string; price?: number | null; metal?: string | null; karat?: string | null;
   weight_g?: number | null; stones?: string | null; description?: string | null;
 };
@@ -17,6 +17,17 @@ export function PieceForm({
 }) {
   return (
     <form action={action} aria-label={name} className="grid gap-4 sm:grid-cols-2">
+      <PieceFields piece={piece} inCatalogue={inCatalogue} />
+      <SubmitButton className="btn btn-primary sm:col-span-2"
+        pendingLabel={submitLabel === "Save piece" ? "Saving…" : "Adding…"}>{submitLabel}</SubmitButton>
+    </form>
+  );
+}
+
+// The piece's detail fields, shared with NewPieceForm.
+export function PieceFields({ piece = {}, inCatalogue = true }: { piece?: Piece; inCatalogue?: boolean }) {
+  return (
+    <>
       {piece.id && <input type="hidden" name="id" value={piece.id} />}
       <input type="hidden" name="in_catalogue" value={String(inCatalogue)} />
       <label className={`${field} sm:col-span-2`}>Title
@@ -40,8 +51,6 @@ export function PieceForm({
       <label className={`${field} sm:col-span-2`}>Description
         <textarea name="description" rows={3} defaultValue={piece.description ?? ""} className={input} />
       </label>
-      <SubmitButton className="btn btn-primary sm:col-span-2"
-        pendingLabel={submitLabel === "Save piece" ? "Saving…" : "Adding…"}>{submitLabel}</SubmitButton>
-    </form>
+    </>
   );
 }
