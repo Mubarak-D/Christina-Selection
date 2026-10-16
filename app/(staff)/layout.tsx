@@ -18,10 +18,11 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen">
       <header className="border-b border-line bg-pearl">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-10 gap-y-2 px-4 py-4">
+        {/* Phone: wordmark + sign out on one row, the menu as one swipeable row below. */}
+        <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-center px-4 pt-3 sm:flex sm:gap-x-10 sm:py-4">
           <p className="display text-lg">Christina Jewellers</p>
-          <StaffNav newChoices={newChoices ?? 0} />
-          <form action={signOut} className="ml-auto">
+          <div className="col-span-2 row-start-2 -mx-4 px-4 sm:mx-0 sm:px-0"><StaffNav newChoices={newChoices ?? 0} /></div>
+          <form action={signOut} className="col-start-2 row-start-1 sm:ml-auto">
             <SubmitButton className="eyebrow min-h-11 hover:text-ink" pendingLabel="Signing out…">Sign out</SubmitButton>
           </form>
         </div>

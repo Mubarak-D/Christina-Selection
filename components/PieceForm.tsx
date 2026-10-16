@@ -16,7 +16,7 @@ export function PieceForm({
   name?: string;
 }) {
   return (
-    <form action={action} aria-label={name} className="grid gap-4 sm:grid-cols-2">
+    <form action={action} aria-label={name} className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
       <PieceFields piece={piece} inCatalogue={inCatalogue} />
       <SubmitButton className="btn btn-primary sm:col-span-2"
         pendingLabel={submitLabel === "Save piece" ? "Saving…" : "Adding…"}>{submitLabel}</SubmitButton>

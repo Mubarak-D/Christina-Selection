@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/database.types";
 import { Calendar, ChevronRight, Clock, Sparkle } from "@/components/Icons";
+import { formatShortDate } from "@/lib/dates";
 
 type Alert = Tables<"alerts">;
 
@@ -13,8 +14,7 @@ const SECTIONS = [
 
 const when = (a: Alert) => {
   if (!a.due) return "";
-  const d = new Date(`${a.due}T00:00:00Z`);
-  const label = d.toLocaleDateString("en-LK", { day: "numeric", month: "short", timeZone: "UTC" });
+  const label = formatShortDate(a.due);
   return a.kind === "deadline" ? `${a.label} · ${label}` : `${a.label} · ${a.kind === "no_reply" ? "sent" : "chosen"} ${label}`;
 };
 

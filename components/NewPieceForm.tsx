@@ -93,12 +93,12 @@ export function NewPieceForm({
   return (
     // action={save}: if submitted before JavaScript loads, the details still save (without files).
     <form ref={form} action={save as unknown as (fd: FormData) => Promise<void>} onSubmit={submit}
-      aria-label={name} className="grid gap-4 sm:grid-cols-2">
+      aria-label={name} className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
       <PieceFields inCatalogue={inCatalogue} />
       <div className="flex flex-col gap-2 sm:col-span-2">
         <label className="flex flex-col gap-1">
           Add photos or videos
-          <input ref={fileInput} name="files" type="file" accept="image/*,video/*" multiple disabled={!!status}
+          <input ref={fileInput} name="files" type="file" className="w-full max-w-full text-sm" accept="image/*,video/*" multiple disabled={!!status}
             onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
         </label>
         <p className="text-sm text-muted">Max 50 MB per file. They upload when you save.</p>

@@ -4,9 +4,16 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CustomerForm } from "@/components/CustomerForm";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { Chat, ChevronRight, Mail } from "@/components/Icons";
+import { formatDate } from "@/lib/dates";
 import { deleteCustomer } from "../actions";
 
-const day = (t: string | null) => (t ? new Date(t).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" }) : "-");
+const STATUS = {
+  handled: { label: "Handled", tone: "bg-line/60 text-muted" },
+  chosen: { label: "Chosen", tone: "bg-gold/10 text-gold-ink" },
+  waiting: { label: "Waiting", tone: "bg-ivory text-ink border border-line" },
+  draft: { label: "Not sent", tone: "bg-ivory text-muted border border-dashed border-line" },
+} as const;
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,39 +29,52 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   return (
     <>
       <BackLink href="/customers" label="Customers" />
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl">{customer.name}</h1>
-        <span className="flex flex-col text-right text-muted">
-          {customer.phone && <span>{customer.phone}</span>}
-          {customer.email && <span>{customer.email}</span>}
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl">{customer.name}</h1>
+          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-muted">
+            {customer.phone && <span className="inline-flex items-center gap-1.5"><Chat />{customer.phone}</span>}
+            {customer.email && <span className="inline-flex items-center gap-1.5 break-all"><Mail />{customer.email}</span>}
+          </p>
           {customer.deadline && (
-            <span className="text-gold-ink">
-              Needed by {new Date(`${customer.deadline}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC" })}
-            </span>
+            <p className="mt-2 inline-block rounded-full bg-gold/10 px-3 py-1 text-sm text-gold-ink">
+              Needed by {formatDate(customer.deadline)}
+            </p>
           )}
-        </span>
+        </div>
+        <Link href={`/sets/new?customer=${customer.id}`} className="btn btn-primary self-start">New set</Link>
       </div>
 
-      <h2 className="mb-2 text-xl">Sets</h2>
-      <Link href={`/sets/new?customer=${customer.id}`} className="mb-4 inline-block underline">New set for {customer.name}</Link>
-      {!sets?.length && <p className="mb-6">No sets sent yet.</p>}
-      <table className="mb-8 w-full text-left text-sm">
-        {!!sets?.length && (
-          <thead><tr><th>Set</th><th>Sent</th><th>Chosen</th><th>Status</th></tr></thead>
-        )}
-        <tbody>
-          {sets?.map((s) => (
-            <tr key={s.id} className="border-t">
-              <td className="py-2"><Link href={`/sets/${s.id}`} className="underline">{s.title || "Selection"}</Link></td>
-              <td>{day(s.sent_at)}</td>
-              <td>{s.submitted_at ? s.set_items.filter((i) => i.status === "chosen").length : "-"}</td>
-              <td>{s.handled_at ? "Handled" : s.submitted_at ? "Chosen" : s.sent_at ? "Waiting" : "Not sent"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2 className="mb-3 text-xl">Sets</h2>
+      {!sets?.length && (
+        <p className="mb-8 rounded-xl border border-dashed border-line px-4 py-8 text-center text-muted">
+          No sets yet. Use New set to send {customer.name.split(/\s+/)[0]} a selection.
+        </p>
+      )}
+      <ul className="mb-10 flex flex-col gap-3">
+        {sets?.map((s) => {
+          const status = STATUS[s.handled_at ? "handled" : s.submitted_at ? "chosen" : s.sent_at ? "waiting" : "draft"];
+          const chosen = s.set_items.filter((i) => i.status === "chosen").length;
+          return (
+            <li key={s.id}>
+              <Link href={`/sets/${s.id}`}
+                className="group flex items-center gap-4 rounded-xl border border-line bg-pearl px-4 py-3 hover:border-gold">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{s.title || "Selection"}</span>
+                  <span className="block text-sm text-muted">
+                    {s.sent_at ? `Sent ${formatDate(s.sent_at)}` : `Created ${formatDate(s.created_at)}`}
+                    {s.submitted_at && ` · ${chosen} of ${s.set_items.length} chosen`}
+                  </span>
+                </span>
+                <span className={`shrink-0 rounded-full px-3 py-1 text-xs ${status.tone}`}>{status.label}</span>
+                <span className="text-muted"><ChevronRight /></span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
 
-      <h2 className="mb-2 text-xl">Details</h2>
+      <h2 className="mb-3 text-xl">Details</h2>
       <CustomerForm customer={customer} />
 
       <div className="mt-12 border-t border-line pt-6">

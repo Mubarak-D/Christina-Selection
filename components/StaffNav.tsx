@@ -14,7 +14,7 @@ export function StaffNav({ newChoices }: { newChoices: number }) {
   const path = usePathname();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   return (
-    <nav className="flex flex-wrap gap-x-6 gap-y-2">
+    <nav className="flex gap-x-5 overflow-x-auto whitespace-nowrap pr-8 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)] sm:flex-wrap sm:gap-x-6 sm:pr-0 sm:[mask-image:none]">
       {NAV.map((n) => (
         <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
           aria-label={n.href === "/" && newChoices > 0 ? `Dashboard (${newChoices} new)` : undefined}

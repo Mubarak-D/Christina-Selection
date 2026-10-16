@@ -2,11 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { phoneSearchDigits } from "@/lib/phone";
 import { Chat, ChevronRight, Mail } from "@/components/Icons";
+import { formatShortDate } from "@/lib/dates";
 
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
-const shortDate = (d: string) =>
-  new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
@@ -48,10 +47,15 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                   {c.phone && <span className="inline-flex items-center gap-1.5"><Chat />{c.phone}</span>}
                   {c.email && <span className="inline-flex min-w-0 items-center gap-1.5 truncate"><Mail />{c.email}</span>}
                 </span>
+                {c.deadline && (
+                  <span className="mt-1 inline-block rounded-full bg-gold/10 px-2.5 py-0.5 text-xs text-gold-ink sm:hidden">
+                    Needed by {formatShortDate(c.deadline)}
+                  </span>
+                )}
               </span>
               {c.deadline && (
                 <span className="hidden shrink-0 rounded-full bg-gold/10 px-3 py-1 text-xs text-gold-ink sm:inline">
-                  Needed by {shortDate(c.deadline)}
+                  Needed by {formatShortDate(c.deadline)}
                 </span>
               )}
               <span className="text-muted transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5"><ChevronRight /></span>

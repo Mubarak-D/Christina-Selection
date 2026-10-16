@@ -48,7 +48,7 @@ export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; next
     <div className="flex flex-col gap-2">
       <label className="flex flex-col gap-1">
         Add photos or videos
-        <input ref={input} type="file" accept="image/*,video/*" multiple disabled={!!status}
+        <input ref={input} type="file" className="w-full max-w-full text-sm" accept="image/*,video/*" multiple disabled={!!status}
           onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
       </label>
       <p className="text-sm text-muted" aria-live="polite">{status ?? "Max 50 MB per file."}</p>

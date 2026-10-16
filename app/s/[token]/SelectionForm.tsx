@@ -120,9 +120,18 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
           <div className="slide-up fixed inset-x-0 bottom-0 border-t border-line bg-ivory/85 px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur-md">
             <div className="mx-auto flex max-w-xl flex-col gap-2">
               {error && <p role="alert" className="text-center text-danger">{error}</p>}
-              <button onClick={submit} disabled={sending} className="btn btn-primary w-full">
-                {sending ? "Sending…" : chosen.size ? `Submit my choice (${chosen.size})` : "None of these"}
-              </button>
+              {chosen.size ? (
+                <button onClick={submit} disabled={sending} className="btn btn-primary w-full">
+                  {sending ? "Sending…" : `Submit my choice (${chosen.size})`}
+                </button>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-muted">Tap Choose on the pieces you like.</p>
+                  <button onClick={submit} disabled={sending} className="btn btn-outline shrink-0">
+                    {sending ? "Sending…" : "None of these"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>

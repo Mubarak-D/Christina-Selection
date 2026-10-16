@@ -46,7 +46,7 @@ test("email-only customer with a deadline", async ({ page }) => {
   await page.getByRole("button", { name: "Save customer" }).click();
   await expect(page).toHaveURL(/\/customers\/[0-9a-f-]{36}$/);
   await expect(page.getByText(email)).toBeVisible();
-  await expect(page.getByText("Needed by 24/12/2026")).toBeVisible();
+  await expect(page.getByText("Needed by 24 Dec 2026")).toBeVisible();
 
   await page.goto("/customers");
   await page.getByLabel("Search").fill(`cust${tag}`);

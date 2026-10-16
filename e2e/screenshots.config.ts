@@ -8,6 +8,6 @@ export default defineConfig({
   webServer: { ...(base.webServer as object), cwd: ".." } as typeof base.webServer,
   projects: [
     base.projects![0],
-    { name: "shots", testMatch: /screenshots\.manual\.ts/, dependencies: ["setup"] },
+    { name: "shots", testMatch: /\.manual\.ts/, dependencies: ["setup"] },
   ],
 });
