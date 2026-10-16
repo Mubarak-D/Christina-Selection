@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { PieceFields } from "./PieceForm";
-import { tooBig, uploadMedia } from "@/lib/upload";
+import { iphoneVideoTip, tooBig, uploadMedia } from "@/lib/upload";
 import { toast } from "./Toaster";
 
 type Chosen = { file: File; url: string };
@@ -22,6 +22,7 @@ export function NewPieceForm({
   const [chosen, setChosen] = useState<Chosen[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tip, setTip] = useState<string | null>(null);
 
   // Free the preview URLs when files are removed or the form goes away.
   const urls = useRef<string[]>([]);
@@ -44,6 +45,7 @@ export function NewPieceForm({
       return;
     }
     setError(null);
+    setTip((t) => iphoneVideoTip(list) ?? t);
     const next = list.map((file) => ({ file, url: URL.createObjectURL(file) }));
     urls.current.push(...next.map((c) => c.url));
     setChosen((prev) => [...prev, ...next]);
@@ -102,6 +104,7 @@ export function NewPieceForm({
             onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
         </label>
         <p className="text-sm text-muted">Max 50 MB per file. They upload when you save.</p>
+        {tip && <p className="rounded-lg bg-gold/10 px-3 py-2 text-sm text-gold-ink">{tip}</p>}
         {!!chosen.length && (
           <ul aria-label="Chosen files" className="grid grid-cols-3 gap-3 sm:grid-cols-5">
             {chosen.map((c) => (

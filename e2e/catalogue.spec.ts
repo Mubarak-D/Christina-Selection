@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeSync, openSync, ftruncateSync } from "node:fs";
+import { closeSync, openSync, ftruncateSync, readFileSync } from "node:fs";
 import { service, STAFF_STATE } from "./helpers";
 
 test.use({ storageState: STAFF_STATE });
@@ -57,4 +57,21 @@ test("files over 50 MB are refused", async ({ page }, testInfo) => {
   await page.getByLabel("Add photos or videos").setInputFiles(huge);
   // Next.js also renders a route-announcer alert, so match ours by text.
   await expect(page.getByRole("alert").filter({ hasText: "Max 50 MB per file" })).toBeVisible();
+});
+
+test("a video-only piece shows its video as the thumbnail", async ({ page }) => {
+  const db = service();
+  const { data } = await db.from("pieces").insert({ title: `Video only ${tag}` }).select().single();
+  created.push(data!.id);
+  const path = `${data!.id}/clip.mp4`;
+  await db.storage.from("media").upload(path, readFileSync("e2e/fixtures/ring.mp4"), { contentType: "video/mp4" });
+  await db.from("piece_media").insert({ piece_id: data!.id, path, kind: "video" });
+
+  for (const url of ["/catalogue", "/sets/new"]) {
+    await page.goto(url);
+    const tile = url === "/catalogue"
+      ? page.getByRole("link", { name: new RegExp(`Video only ${tag}`) })
+      : page.locator("label", { hasText: `Video only ${tag}` });
+    await expect(tile.locator("video")).toHaveCount(1);
+  }
 });

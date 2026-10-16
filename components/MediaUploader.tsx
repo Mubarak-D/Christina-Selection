@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { tooBig, uploadMedia } from "@/lib/upload";
+import { iphoneVideoTip, tooBig, uploadMedia } from "@/lib/upload";
 import { toast } from "./Toaster";
 
 // On an existing piece: files upload as soon as they're chosen.
@@ -10,12 +10,14 @@ export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; next
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [tip, setTip] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   async function upload(files: FileList | null) {
     if (!files?.length) return;
     setError(null);
     const list = Array.from(files);
+    setTip(iphoneVideoTip(list));
     if (tooBig(list)) {
       setError("Max 50 MB per file. Trim or compress the video and try again.");
       return;
@@ -52,6 +54,7 @@ export function MediaUploader({ pieceId, nextSort = 0 }: { pieceId: string; next
           onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
       </label>
       <p className="text-sm text-muted" aria-live="polite">{status ?? "Max 50 MB per file."}</p>
+      {tip && <p className="rounded-lg bg-gold/10 px-3 py-2 text-sm text-gold-ink">{tip}</p>}
       {error && <p role="alert" className="text-danger">{error}</p>}
     </div>
   );

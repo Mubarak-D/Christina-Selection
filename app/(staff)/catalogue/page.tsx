@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
+import { PieceThumb, thumbOf } from "@/components/PieceThumb";
 import { formatPrice } from "@/lib/format";
 
 export default async function CataloguePage() {
@@ -11,9 +12,8 @@ export default async function CataloguePage() {
     .eq("in_catalogue", true)
     .order("created_at", { ascending: false });
 
-  const thumbs = (pieces ?? []).map((p) =>
-    p.piece_media.filter((m) => m.kind === "image").sort((a, b) => a.sort - b.sort)[0]?.path);
-  const urls = await signedUrls(thumbs.filter((t): t is string => !!t));
+  const thumbs = (pieces ?? []).map((p) => thumbOf(p.piece_media));
+  const urls = await signedUrls(thumbs.flatMap((t) => (t ? [t.path] : [])));
 
   return (
     <>
@@ -27,10 +27,7 @@ export default async function CataloguePage() {
           <li key={p.id}>
             <Link href={`/catalogue/${p.id}`} className="block">
               <div className="aspect-square overflow-hidden rounded bg-line/40">
-                {thumbs[i] && urls[thumbs[i]!] && (
-                  // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; skip the image optimizer
-                  <img src={urls[thumbs[i]!]} alt="" className="h-full w-full object-cover" />
-                )}
+                <PieceThumb media={thumbs[i]} url={thumbs[i] && urls[thumbs[i]!.path]} />
               </div>
               <span className="mt-1 block">{p.title}</span>
               <span className="block text-sm text-muted">{formatPrice(p.price)}</span>

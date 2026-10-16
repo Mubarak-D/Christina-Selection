@@ -14,3 +14,12 @@ export async function uploadMedia(pieceId: string, file: File, sort: number) {
   const row = await supabase.from("piece_media").insert({ piece_id: pieceId, path, kind, sort });
   if (row.error) throw row.error;
 }
+
+// iPhones record .mov in HEVC by default, which many Android phones and some browsers can't
+// play. We can't reliably detect the codec in the browser, so flag .mov files with the fix.
+export function iphoneVideoTip(files: File[]): string | null {
+  const mov = files.some((f) => f.type === "video/quicktime" || /\.mov$/i.test(f.name));
+  return mov
+    ? "Tip: iPhone .mov videos may not play on some Android phones. On the iPhone, set Settings → Camera → Formats → Most Compatible, then record again."
+    : null;
+}
