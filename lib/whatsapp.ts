@@ -7,3 +7,7 @@ export const selectionMessage = (firstName: string, url: string) =>
 export function buildWhatsAppLink(phoneE164: string, url: string, firstName: string): string {
   return `https://wa.me/${phoneE164.replace(/\D/g, "")}?text=${encodeURIComponent(selectionMessage(firstName, url))}`;
 }
+
+// Job card read-back (see readBackMessage): staff check it in WhatsApp and press send.
+export const buildReadBackLink = (phoneE164: string, message: string) =>
+  `https://wa.me/${phoneE164.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;

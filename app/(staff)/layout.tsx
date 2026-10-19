@@ -17,7 +17,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-pearl">
+      <header className="border-b border-line bg-pearl print:hidden">
         {/* Phone: wordmark + sign out on one row, the menu as one swipeable row below. */}
         <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto] items-center px-4 pt-3 sm:flex sm:gap-x-10 sm:py-4">
           <p className="display text-lg">Christina Jewellers</p>
@@ -27,7 +27,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           </form>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-10">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-10 print:max-w-none print:p-0">{children}</main>
       <Toaster flashKey={(await cookies()).get("flash")?.value} />
     </div>
   );

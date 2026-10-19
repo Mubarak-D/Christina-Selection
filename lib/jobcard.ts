@@ -20,7 +20,7 @@ export type Question = {
   answer?: string;
   prev?: string;            // field value before the answer, restored if the answer is cleared
 };
-export type Change = { field: string; old: string; new: string; at: string };
+export type Change = { field: string; old: string; new: string; at: string; rev: number };
 export type JobCard = {
   fields: Record<string, string>;
   edited: string[];
@@ -70,8 +70,8 @@ export function recordChange(card: JobCard, field: string, value: string, at: st
   const next = { ...card, edited, fields: { ...card.fields, [field]: value } };
   if (!card.printed_at) return next;
   const printed = card.printed_at;
-  const bump = !card.changes.some((c) => c.at > printed);
-  return { ...next, revision: card.revision + (bump ? 1 : 0), changes: [...card.changes, { field, old, new: value, at }] };
+  const revision = card.revision + (card.changes.some((c) => c.at > printed) ? 0 : 1);
+  return { ...next, revision, changes: [...card.changes, { field, old, new: value, at, rev: revision }] };
 }
 
 export function applyAnswer(card: JobCard, questionId: string, answer: string, at: string): JobCard {
@@ -151,4 +151,11 @@ export function flagSinhala(card: JobCard): JobCard {
       text: "The Sinhala instructions don't show the same numbers or engraving as the English. Fix them in Details and save; this clears once they match.",
     }],
   };
+}
+
+// Fields changed in the current revision, with the value they had before it (shown crossed out).
+export function revisionChanges(card: JobCard): Record<string, string> {
+  const before: Record<string, string> = {};
+  for (const c of card.changes) if (c.rev === card.revision && !(c.field in before)) before[c.field] = c.old;
+  return Object.fromEntries(Object.entries(before).filter(([f, old]) => old !== (card.fields[f] ?? "")));
 }

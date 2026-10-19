@@ -146,3 +146,11 @@ export async function deleteJob(id: string) {
   await flash("Job card deleted");
   redirect("/jobs");
 }
+
+// Each print is stamped: edits after it start a new revision (see recordChange).
+export async function markPrinted(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("job_cards").update({ printed_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw error;
+  revalidatePath(`/jobs/${id}`);
+}
