@@ -51,6 +51,12 @@ export async function deleteCustomer(id: string) {
   const { data: sets } = await supabase.from("selection_sets").select("id").eq("customer_id", id);
   const oneOffs = await oneOffPiecesIn(supabase, (sets ?? []).map((s) => s.id));
   await deletePieces(supabase, oneOffs); // first, so a failure can't leave unreachable pieces
+  const { data: jobs } = await supabase.from("job_cards").select("job_card_media(path)").eq("customer_id", id);
+  const photos = (jobs ?? []).flatMap((j) => j.job_card_media.map((m) => m.path));
+  if (photos.length) {
+    const files = await supabase.storage.from("media").remove(photos); // job cards themselves go by cascade
+    if (files.error) throw files.error;
+  }
   const { error } = await supabase.from("customers").delete().eq("id", id);
   if (error) throw error;
   revalidatePath("/customers");

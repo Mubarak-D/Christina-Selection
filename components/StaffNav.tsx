@@ -10,6 +10,7 @@ const NAV = [
   { href: "/customers", label: "Customers" },
   { href: "/catalogue", label: "Catalogue" },
   { href: "/sets/new", label: "New set" },
+  { href: "/jobs", label: "Job cards" },
 ];
 
 export function StaffNav({ newChoices: initial }: { newChoices: number }) {

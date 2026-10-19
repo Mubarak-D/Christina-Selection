@@ -1,4 +1,9 @@
 // Job card rules, kept pure so they can be tested and shared by the pages and the AI fill.
+import type { Tables } from "./database.types";
+
+export const SOURCES = ["whatsapp", "website", "walk_in", "phone"] as const;
+export type Source = (typeof SOURCES)[number];
+export const SOURCE_LABEL: Record<Source, string> = { whatsapp: "WhatsApp", website: "Website", walk_in: "Walk-in", phone: "Phone" };
 
 export const FIELDS = [
   ["item", "Item"], ["metal", "Metal"], ["purity", "Purity"], ["size", "Size"], ["weight", "Weight"],
@@ -33,7 +38,18 @@ export type Fill = {
   instructions_si: string[];
 };
 
-const isOpen = (q: Question) => !q.answer;
+export const toCard = (row: Tables<"job_cards">): JobCard => ({
+  fields: row.fields as Record<string, string>,
+  edited: row.edited,
+  questions: row.questions as unknown as Question[],
+  revision: row.revision,
+  printed_at: row.printed_at,
+  changes: row.changes as unknown as Change[],
+  instructions_en: row.instructions_en,
+  instructions_si: row.instructions_si,
+});
+
+export const isOpen = (q: Question) => !q.answer;
 
 // Open must questions, plus one for each required field that is empty and not already asked about.
 export function openMust(card: JobCard): Question[] {
@@ -60,7 +76,9 @@ export function recordChange(card: JobCard, field: string, value: string, at: st
 
 export function applyAnswer(card: JobCard, questionId: string, answer: string, at: string): JobCard {
   const q = card.questions.find((x) => x.id === questionId);
-  if (!q) return card;
+  // A "missing:<field>" question (from openMust) isn't stored: answering it just sets the field.
+  if (!q) return questionId.startsWith("missing:") && answer.trim()
+    ? recordChange(card, questionId.slice(8), answer.trim(), at) : card;
   const value = answer.trim();
   const updated: Question = value
     ? { ...q, answer: value, prev: q.prev ?? card.fields[q.field ?? ""] ?? "" }

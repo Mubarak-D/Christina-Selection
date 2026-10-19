@@ -36,6 +36,11 @@ describe("applyAnswer", () => {
     expect(isDraft(c)).toBe(false);
   });
 
+  test("answering a missing-field question sets the field", () => {
+    const c = applyAnswer(card({ fields: { item: "Ring", metal: "Gold", purity: "22K" } }), "missing:size", "12", AT);
+    expect([c.fields.size, isDraft(c)]).toEqual(["12", false]);
+  });
+
   test("clearing the answer restores the old value and brings the flag back", () => {
     const c = applyAnswer(applyAnswer(card({ questions: [q] }), "a", "16", AT), "a", "", AT);
     expect(c.fields.size).toBe("14");
