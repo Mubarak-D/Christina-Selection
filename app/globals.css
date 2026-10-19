@@ -116,3 +116,7 @@
 }
 @keyframes sheen { from { background-position: 100% 0; } to { background-position: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: var(--color-line); } }
+
+/* Job card print: one A4 sheet, ink on white. */
+@page { size: A4; margin: 12mm; }
+@media print { body { background: #fff; } }

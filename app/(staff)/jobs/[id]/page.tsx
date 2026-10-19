@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/BackLink";
 import { ConfirmButton } from "@/components/ConfirmButton";
@@ -6,7 +7,8 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatDate } from "@/lib/dates";
-import { FIELDS, SOURCES, SOURCE_LABEL, isDraft, isOpen, openMust, toCard, type Source } from "@/lib/jobcard";
+import { FIELDS, SOURCES, SOURCE_LABEL, isDraft, isOpen, openMust, readBackMessage, revisionChanges, toCard, type Source } from "@/lib/jobcard";
+import { buildReadBackLink } from "@/lib/whatsapp";
 import { aiReady } from "@/lib/ai/jobcard";
 import { addCustomerWords, answerQuestion, deleteJob, deletePhoto, fillWithAI, saveCaption, saveDetails } from "../actions";
 
@@ -17,7 +19,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const { id } = await params;
   const supabase = await createClient();
   const { data: job } = await supabase.from("job_cards")
-    .select("*, customers(id,name), job_card_media(id,path,caption,sort)").eq("id", id).maybeSingle();
+    .select("*, customers(id,name,phone), job_card_media(id,path,caption,sort)").eq("id", id).maybeSingle();
   if (!job || !job.customers) notFound();
 
   const card = toCard(job);
@@ -29,6 +31,9 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const photos = [...job.job_card_media].sort((a, b) => a.sort - b.sort);
   const urls = await signedUrls(photos.map((p) => p.path));
   const ai = aiReady();
+  const was = revisionChanges(card);
+  const readBack = job.customers.phone
+    ? buildReadBackLink(job.customers.phone, readBackMessage(card, job.customers.name.split(/\s+/)[0])) : null;
 
   return (
     <>
@@ -36,12 +41,21 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       <p className="mb-1 text-sm text-muted">
         #{job.order_no} · {SOURCE_LABEL[job.source as Source]} · {job.due_date ? `Due ${formatDate(job.due_date)}` : "No due date"}
         {card.revision > 1 && ` · Revision ${card.revision}`}
+        {job.printed_at && ` · Printed ${formatDate(job.printed_at)}`}
       </p>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl">{job.customers.name}{card.fields.item ? ` · ${card.fields.item}` : ""}</h1>
         <span className={`rounded-full px-3 py-1 text-xs ${isDraft(card) ? "border border-dashed border-danger text-danger" : "bg-gold/10 text-gold-ink"}`}>
           {isDraft(card) ? "Draft · not confirmed" : "Ready for the maker"}
         </span>
+      </div>
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <Link href={`/jobs/${job.id}/print`} className="btn btn-primary">Print</Link>
+        {readBack ? (
+          <a href={readBack} target="_blank" rel="noopener noreferrer" className="btn btn-outline">Read back on WhatsApp</a>
+        ) : (
+          <p className="text-sm text-muted">Add a WhatsApp number to the customer to send a read-back.</p>
+        )}
       </div>
 
       <section aria-label="Questions" className="mb-10">
@@ -95,7 +109,10 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             </label>
             {FIELDS.map(([key, label]) => (
               <label key={key} className="flex flex-col gap-1">
-                <span>{label}{notConfirmed.has(key) && <span className="text-danger"> ⚠ Not confirmed</span>}</span>
+                <span>
+                  {label}{notConfirmed.has(key) && <span className="text-danger"> ⚠ Not confirmed</span>}
+                  {key in was && <> · was <s>{was[key] || "blank"}</s></>}
+                </span>
                 <input name={key} defaultValue={card.fields[key] ?? ""} />
               </label>
             ))}

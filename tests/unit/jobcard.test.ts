@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  applyAnswer, flagSinhala, isDraft, mergeFill, toFill, numbersPreserved, openMust, readBackMessage, recordChange,
+  applyAnswer, flagSinhala, isDraft, mergeFill, revisionChanges, toFill, numbersPreserved, openMust, readBackMessage, recordChange,
   type JobCard,
 } from "@/lib/jobcard";
 
@@ -86,8 +86,8 @@ describe("recordChange", () => {
     c = recordChange(c, "metal", "White gold", LATER);
     expect(c.revision).toBe(2);
     expect(c.changes).toEqual([
-      { field: "size", old: "14", new: "16", at: LATER },
-      { field: "metal", old: "Gold", new: "White gold", at: LATER },
+      { field: "size", old: "14", new: "16", at: LATER, rev: 2 },
+      { field: "metal", old: "Gold", new: "White gold", at: LATER, rev: 2 },
     ]);
   });
 
@@ -130,5 +130,16 @@ describe("flagSinhala", () => {
     expect(bad.questions.filter((q) => q.id === "sinhala-check")).toHaveLength(1);
     expect(isDraft(bad)).toBe(true);
     expect(flagSinhala({ ...bad, instructions_si: ["size 14"] }).questions).toHaveLength(0);
+  });
+});
+
+describe("revisionChanges", () => {
+  test("one line per field in the current revision: first old value, latest new; reverted fields drop out", () => {
+    let c = card({ printed_at: AT });
+    c = recordChange(c, "size", "16", LATER);
+    c = recordChange(c, "size", "18", LATER);
+    c = recordChange(c, "metal", "Silver", LATER);
+    c = recordChange(c, "metal", "Gold", LATER);
+    expect(revisionChanges(c)).toEqual({ size: "14" });
   });
 });
