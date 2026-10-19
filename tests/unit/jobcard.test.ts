@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  applyAnswer, isDraft, mergeFill, numbersPreserved, openMust, readBackMessage, recordChange,
+  applyAnswer, flagSinhala, isDraft, mergeFill, toFill, numbersPreserved, openMust, readBackMessage, recordChange,
   type JobCard,
 } from "@/lib/jobcard";
 
@@ -109,4 +109,26 @@ describe("numbersPreserved", () => {
     expect(numbersPreserved(["22K ring, size 14, engrave 'N & R'"], ["22K මුද්ද, size 14, 'N & R'"], "N & R")).toBe(true));
   test("a changed number fails", () => expect(numbersPreserved(["size 14.5"], ["size 15"])).toBe(false));
   test("missing engraving fails", () => expect(numbersPreserved(["engrave Amma"], ["කොටන්න"], "Amma")).toBe(false));
+});
+
+describe("toFill", () => {
+  test("trims, drops blank questions and maps an empty field link to none", () => {
+    const fill = toFill({
+      fields: { item: " Ring ", size: "" },
+      questions: [{ field: "", text: "Gift wrap?", level: "check" }, { field: "size", text: "  ", level: "must" }],
+      instructions_en: [" Make ring ", ""], instructions_si: ["මුද්ද හදන්න"],
+    });
+    expect(fill.fields).toEqual({ item: "Ring", size: "" });
+    expect(fill.questions).toEqual([{ text: "Gift wrap?", level: "check" }]);
+    expect(fill.instructions_en).toEqual(["Make ring"]);
+  });
+});
+
+describe("flagSinhala", () => {
+  test("adds one must question when a number differs, and removes it once fixed", () => {
+    const bad = flagSinhala(flagSinhala(card({ instructions_en: ["size 14"], instructions_si: ["size 16"] })));
+    expect(bad.questions.filter((q) => q.id === "sinhala-check")).toHaveLength(1);
+    expect(isDraft(bad)).toBe(true);
+    expect(flagSinhala({ ...bad, instructions_si: ["size 14"] }).questions).toHaveLength(0);
+  });
 });

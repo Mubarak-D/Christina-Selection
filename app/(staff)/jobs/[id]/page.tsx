@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatDate } from "@/lib/dates";
 import { FIELDS, SOURCES, SOURCE_LABEL, isDraft, isOpen, openMust, toCard, type Source } from "@/lib/jobcard";
-import { addCustomerWords, answerQuestion, deleteJob, deletePhoto, saveCaption, saveDetails } from "../actions";
+import { aiReady } from "@/lib/ai/jobcard";
+import { addCustomerWords, answerQuestion, deleteJob, deletePhoto, fillWithAI, saveCaption, saveDetails } from "../actions";
 
 const at = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Colombo" });
@@ -27,6 +28,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const words = job.customer_words as { at: string; text: string }[];
   const photos = [...job.job_card_media].sort((a, b) => a.sort - b.sort);
   const urls = await signedUrls(photos.map((p) => p.path));
+  const ai = aiReady();
 
   return (
     <>
@@ -43,7 +45,17 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       </div>
 
       <section aria-label="Questions" className="mb-10">
-        <h2 className="mb-3 text-xl">Questions</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl">Questions</h2>
+          {ai ? (
+            <form action={fillWithAI.bind(null, job.id)}>
+              <SubmitButton className="btn btn-gold" pendingLabel="Reading the order…">Fill with AI</SubmitButton>
+            </form>
+          ) : (
+            <p className="text-sm text-muted">AI fill is off: add ANTHROPIC_API_KEY to the server settings.</p>
+          )}
+        </div>
+        {ai && <p className="mb-3 text-sm text-muted">AI fills blank details and asks questions. It never changes details you typed or answered.</p>}
         {!open.length && !answered.length && <p className="text-muted">Nothing to confirm.</p>}
         <ul className="flex flex-col gap-3">
           {open.map((q) => (
@@ -113,7 +125,9 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <label className="flex flex-col gap-1">Paste the customer&apos;s reply
             <textarea name="words" rows={3} required />
           </label>
-          <SubmitButton className="btn btn-outline self-start" pendingLabel="Adding…">Add reply</SubmitButton>
+          <SubmitButton className="btn btn-outline self-start" pendingLabel={ai ? "Adding and updating the card…" : "Adding…"}>
+            {ai ? "Add reply and update card" : "Add reply"}
+          </SubmitButton>
         </form>
       </section>
 
