@@ -1,0 +1,107 @@
+import { describe, expect, test } from "vitest";
+import {
+  applyAnswer, isDraft, mergeFill, numbersPreserved, openMust, readBackMessage, recordChange,
+  type JobCard,
+} from "@/lib/jobcard";
+
+const AT = "2026-10-19T10:00:00.000Z";
+const LATER = "2026-10-20T10:00:00.000Z";
+
+const card = (over: Partial<JobCard> = {}): JobCard => ({
+  fields: { item: "Ring", metal: "Gold", purity: "22K", size: "14" },
+  edited: [], questions: [], revision: 1, printed_at: null, changes: [], ...over,
+});
+
+describe("draft flag", () => {
+  test("complete card with no open must is clean", () => expect(isDraft(card())).toBe(false));
+
+  test("missing required field is an open must", () => {
+    const c = card({ fields: { item: "Ring", metal: "Gold", purity: "22K" } });
+    expect(openMust(c).map((q) => q.field)).toEqual(["size"]);
+    expect(isDraft(c)).toBe(true);
+  });
+
+  test("open check question does not make a draft", () => {
+    expect(isDraft(card({ questions: [{ id: "a", field: "metal", text: "Plated or solid?", level: "check" }] }))).toBe(false);
+  });
+});
+
+describe("applyAnswer", () => {
+  const q = { id: "a", field: "size", text: "Size 14 or 16?", level: "must" as const };
+
+  test("answer fills the field and clears the flag", () => {
+    const c = applyAnswer(card({ questions: [q] }), "a", " 16 ", AT);
+    expect(c.fields.size).toBe("16");
+    expect(c.edited).toContain("size");
+    expect(isDraft(c)).toBe(false);
+  });
+
+  test("clearing the answer restores the old value and brings the flag back", () => {
+    const c = applyAnswer(applyAnswer(card({ questions: [q] }), "a", "16", AT), "a", "", AT);
+    expect(c.fields.size).toBe("14");
+    expect(isDraft(c)).toBe(true);
+  });
+});
+
+describe("mergeFill", () => {
+  test("never overwrites a field a person edited", () => {
+    const c = mergeFill(card({ edited: ["size"] }), {
+      fields: { size: "18", stones: "Ruby" }, questions: [], instructions_en: [], instructions_si: [],
+    }, AT);
+    expect(c.fields.size).toBe("14");
+    expect(c.fields.stones).toBe("Ruby");
+  });
+
+  test("keeps answered questions, replaces open ones, drops questions on edited fields", () => {
+    const c = mergeFill(card({
+      edited: ["size"],
+      questions: [
+        { id: "a", field: "size", text: "Size?", level: "must", answer: "14" },
+        { id: "b", text: "Old open question", level: "check" },
+      ],
+    }), {
+      fields: {},
+      questions: [{ field: "size", text: "Size again?", level: "must" }, { field: "metal", text: "Plated?", level: "check" }],
+      instructions_en: ["Make a 22K ring"], instructions_si: ["22K මුද්දක් හදන්න"],
+    }, AT);
+    expect(c.questions.map((q) => q.text)).toEqual(["Size?", "Plated?"]);
+    expect(new Set(c.questions.map((q) => q.id)).size).toBe(2);
+    expect(c.instructions_si).toEqual(["22K මුද්දක් හදන්න"]);
+  });
+});
+
+describe("recordChange", () => {
+  test("before first print: no revision, no history", () => {
+    const c = recordChange(card(), "size", "16", AT);
+    expect([c.revision, c.changes.length, c.fields.size]).toEqual([1, 0, "16"]);
+  });
+
+  test("after print: one revision bump per print, history kept", () => {
+    let c = recordChange(card({ printed_at: AT }), "size", "16", LATER);
+    c = recordChange(c, "metal", "White gold", LATER);
+    expect(c.revision).toBe(2);
+    expect(c.changes).toEqual([
+      { field: "size", old: "14", new: "16", at: LATER },
+      { field: "metal", old: "Gold", new: "White gold", at: LATER },
+    ]);
+  });
+
+  test("an unchanged value records nothing", () => {
+    const c = recordChange(card({ printed_at: AT }), "size", "14", LATER);
+    expect([c.revision, c.changes.length]).toEqual([1, 0]);
+  });
+});
+
+test("readBackMessage lists confirmed details and open questions", () => {
+  const msg = readBackMessage(card({ questions: [{ id: "a", text: "Plated or solid?", level: "check" }] }), "Nimal");
+  expect(msg).toContain("Hi Nimal");
+  expect(msg).toContain("Purity: 22K");
+  expect(msg).toContain("1. Plated or solid?");
+});
+
+describe("numbersPreserved", () => {
+  test("same numbers and engraving: ok", () =>
+    expect(numbersPreserved(["22K ring, size 14, engrave 'N & R'"], ["22K මුද්ද, size 14, 'N & R'"], "N & R")).toBe(true));
+  test("a changed number fails", () => expect(numbersPreserved(["size 14.5"], ["size 15"])).toBe(false));
+  test("missing engraving fails", () => expect(numbersPreserved(["engrave Amma"], ["කොටන්න"], "Amma")).toBe(false));
+});
