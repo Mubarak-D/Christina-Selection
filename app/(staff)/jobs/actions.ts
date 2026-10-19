@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flash } from "@/lib/flash";
 import type { Json, Tables, TablesUpdate } from "@/lib/database.types";
-import { FIELDS, SOURCES, applyAnswer, recordChange, toCard, type JobCard, type Source } from "@/lib/jobcard";
+import { FIELDS, SOURCES, applyAnswer, flagSinhala, mergeFill, recordChange, toCard, type JobCard, type Source } from "@/lib/jobcard";
+import { aiReady, fillJobCard } from "@/lib/ai/jobcard";
+import { signedUrls } from "@/lib/public-set";
 
 const text = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const lines = (fd: FormData, k: string) => text(fd, k).split("\n").map((l) => l.trim()).filter(Boolean);
@@ -52,28 +54,54 @@ export async function saveDetails(id: string, formData: FormData) {
     }
     const source = text(formData, "source");
     return {
-      ...next,
+      ...flagSinhala({ ...next, instructions_en: lines(formData, "instructions_en"), instructions_si: lines(formData, "instructions_si") }),
       due_date: text(formData, "due_date") || null,
       ...(isSource(source) ? { source } : {}),
-      instructions_en: lines(formData, "instructions_en"),
-      instructions_si: lines(formData, "instructions_si"),
     };
   });
   await flash("Saved");
 }
 
 export async function answerQuestion(id: string, questionId: string, formData: FormData) {
-  await update(id, (card) => applyAnswer(card, questionId, text(formData, "answer"), new Date().toISOString()));
+  // The Sinhala check can't be answered away: it comes back until the instructions match.
+  await update(id, (card) => flagSinhala(applyAnswer(card, questionId, text(formData, "answer"), new Date().toISOString())));
 }
 
 // The customer's own words, appended as written. Nothing else ever writes this column.
+// With AI on, the card is filled again so open questions reflect the reply.
 export async function addCustomerWords(id: string, formData: FormData) {
   const words = text(formData, "words");
   if (!words) return;
   await update(id, (_card, row) => ({
     customer_words: [...(row.customer_words as Json[]), { at: new Date().toISOString(), text: words }],
   }));
-  await flash("Added");
+  await flash(aiReady() ? await fill(id, "Reply added and card updated") : "Reply added");
+}
+
+export async function fillWithAI(id: string) {
+  await flash(await fill(id, "Filled by AI. Check the questions."));
+}
+
+// Runs the AI fill and returns the message to show; failures come back as a message, not a crash.
+async function fill(id: string, done: string): Promise<string> {
+  if (!aiReady()) return "AI fill isn't set up (no ANTHROPIC_API_KEY).";
+  const supabase = await createClient();
+  const { data: row, error } = await supabase.from("job_cards").select("*, job_card_media(path,caption,sort)").eq("id", id).single();
+  if (error) throw error;
+  const media = [...row.job_card_media].sort((a, b) => a.sort - b.sort);
+  const urls = await signedUrls(media.map((m) => m.path));
+  try {
+    const result = await fillJobCard({
+      card: toCard(row),
+      words: row.customer_words as { at: string; text: string }[],
+      photos: media.filter((m) => urls[m.path]).map((m) => ({ url: urls[m.path], caption: m.caption })),
+    });
+    const at = new Date().toISOString();
+    await update(id, (card) => flagSinhala(mergeFill(card, result, at)));
+    return done;
+  } catch (e) {
+    return e instanceof Error ? e.message : "AI fill failed.";
+  }
 }
 
 export async function addPhoto(id: string, path: string, sort: number) {

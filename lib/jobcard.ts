@@ -121,3 +121,34 @@ export function numbersPreserved(en: string[], si: string[], engraving?: string)
   if (nums(en) !== nums(si)) return false;
   return !engraving?.trim() || si.join(" ").includes(engraving.trim());
 }
+
+// The AI reply (already schema-checked by the API) tidied into a Fill.
+export function toFill(raw: {
+  fields: Record<string, string>;
+  questions: { field: string; text: string; level: "must" | "check" }[];
+  instructions_en: string[];
+  instructions_si: string[];
+}): Fill {
+  const clean = (lines: string[]) => lines.map((l) => l.trim()).filter(Boolean);
+  return {
+    fields: Object.fromEntries(Object.entries(raw.fields).map(([k, v]) => [k, v.trim()])),
+    questions: raw.questions.filter((q) => q.text.trim())
+      .map((q) => ({ text: q.text.trim(), level: q.level, ...(q.field ? { field: q.field } : {}) })),
+    instructions_en: clean(raw.instructions_en),
+    instructions_si: clean(raw.instructions_si),
+  };
+}
+
+// Keeps one blocking question while the Sinhala instructions don't carry the same numbers and
+// engraving as the English. Run after every change to the instructions.
+export function flagSinhala(card: JobCard): JobCard {
+  const questions = card.questions.filter((q) => q.id !== "sinhala-check");
+  const ok = numbersPreserved(card.instructions_en ?? [], card.instructions_si ?? [], card.fields.engraving);
+  return {
+    ...card,
+    questions: ok ? questions : [...questions, {
+      id: "sinhala-check", level: "must",
+      text: "The Sinhala instructions don't show the same numbers or engraving as the English. Fix them in Details and save; this clears once they match.",
+    }],
+  };
+}
