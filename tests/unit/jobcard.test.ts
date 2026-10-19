@@ -124,6 +124,16 @@ describe("toFill", () => {
   });
 });
 
+test("toFill tolerates a loose reply: unknown fields, 'none' links, odd levels, missing lists", () => {
+  const fill = toFill({
+    fields: { item: "Ring", colour: "red", size: 14 },
+    questions: [{ field: "none", text: "Gift box?", level: "urgent" }, { field: "bogus", text: "Size?", level: "must" }],
+  } as never);
+  expect(fill.fields).toEqual({ item: "Ring" });
+  expect(fill.questions).toEqual([{ text: "Gift box?", level: "check" }, { text: "Size?", level: "must" }]);
+  expect([fill.instructions_en, fill.instructions_si]).toEqual([[], []]);
+});
+
 describe("flagSinhala", () => {
   test("adds one must question when a number differs, and removes it once fixed", () => {
     const bad = flagSinhala(flagSinhala(card({ instructions_en: ["size 14"], instructions_si: ["size 16"] })));

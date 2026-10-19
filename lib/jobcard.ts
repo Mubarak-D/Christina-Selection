@@ -122,18 +122,25 @@ export function numbersPreserved(en: string[], si: string[], engraving?: string)
   return !engraving?.trim() || si.join(" ").includes(engraving.trim());
 }
 
-// The AI reply (already schema-checked by the API) tidied into a Fill.
+// The AI reply tidied into a Fill. The model's schema isn't strictly enforced, so anything
+// unexpected (unknown field, odd level, missing list) is dropped or defaulted here.
 export function toFill(raw: {
-  fields: Record<string, string>;
-  questions: { field: string; text: string; level: "must" | "check" }[];
-  instructions_en: string[];
-  instructions_si: string[];
+  fields?: Record<string, unknown>;
+  questions?: { field?: string; text?: string; level?: string }[];
+  instructions_en?: unknown[];
+  instructions_si?: unknown[];
 }): Fill {
-  const clean = (lines: string[]) => lines.map((l) => l.trim()).filter(Boolean);
+  const keys: string[] = FIELDS.map(([k]) => k);
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const clean = (lines: unknown[] = []) => lines.map(str).filter(Boolean);
   return {
-    fields: Object.fromEntries(Object.entries(raw.fields).map(([k, v]) => [k, v.trim()])),
-    questions: raw.questions.filter((q) => q.text.trim())
-      .map((q) => ({ text: q.text.trim(), level: q.level, ...(q.field ? { field: q.field } : {}) })),
+    fields: Object.fromEntries(Object.entries(raw.fields ?? {})
+      .filter(([k, v]) => keys.includes(k) && typeof v === "string").map(([k, v]) => [k, str(v)])),
+    questions: (raw.questions ?? []).filter((q) => str(q?.text)).map((q) => ({
+      text: str(q.text),
+      level: q.level === "must" ? "must" as const : "check" as const,
+      ...(q.field && keys.includes(q.field) ? { field: q.field } : {}),
+    })),
     instructions_en: clean(raw.instructions_en),
     instructions_si: clean(raw.instructions_si),
   };

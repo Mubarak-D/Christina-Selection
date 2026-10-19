@@ -10,7 +10,7 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 ## Stack
 - Next.js (App Router, TypeScript, Tailwind, `@supabase/ssr`), deployed on Netlify (Vercel is not available to the user).
 - Supabase: Postgres (data), Auth (staff logins), Storage (photos/videos).
-- No other services unless a requirement forces it. Exception: the Anthropic API (`@anthropic-ai/sdk`, server only, `ANTHROPIC_API_KEY`) for job card AI fill; without the key the button is off and cards are filled by hand.
+- No other services unless a requirement forces it. Exception: Google Gemini's free tier (plain `fetch`, server only, `GEMINI_API_KEY`) for job card AI fill; without the key the button is off and cards are filled by hand. Free-tier prompts may be used by Google, which the card page tells staff.
 
 ## Core model
 - `customers`: name, WhatsApp phone (E.164), birthday, anniversary, notes.

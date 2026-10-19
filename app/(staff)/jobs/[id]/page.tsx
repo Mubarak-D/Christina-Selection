@@ -66,10 +66,10 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               <SubmitButton className="btn btn-gold" pendingLabel="Reading the order…">Fill with AI</SubmitButton>
             </form>
           ) : (
-            <p className="text-sm text-muted">AI fill is off: add ANTHROPIC_API_KEY to the server settings.</p>
+            <p className="text-sm text-muted">AI fill is off: add GEMINI_API_KEY to the server settings.</p>
           )}
         </div>
-        {ai && <p className="mb-3 text-sm text-muted">AI fills blank details and asks questions. It never changes details you typed or answered.</p>}
+        {ai && <p className="mb-3 text-sm text-muted">AI fills blank details and asks questions. It never changes details you typed or answered. The chat and photos are sent to Google Gemini.</p>}
         {!open.length && !answered.length && <p className="text-muted">Nothing to confirm.</p>}
         <ul className="flex flex-col gap-3">
           {open.map((q) => (

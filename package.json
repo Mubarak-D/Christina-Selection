@@ -13,7 +13,6 @@
     "staff:add": "node scripts/add-staff.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "motion": "^14.3.0",

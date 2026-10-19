@@ -84,7 +84,7 @@ export async function fillWithAI(id: string) {
 
 // Runs the AI fill and returns the message to show; failures come back as a message, not a crash.
 async function fill(id: string, done: string): Promise<string> {
-  if (!aiReady()) return "AI fill isn't set up (no ANTHROPIC_API_KEY).";
+  if (!aiReady()) return "AI fill isn't set up (no GEMINI_API_KEY).";
   const supabase = await createClient();
   const { data: row, error } = await supabase.from("job_cards").select("*, job_card_media(path,caption,sort)").eq("id", id).single();
   if (error) throw error;
