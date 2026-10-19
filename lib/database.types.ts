@@ -44,6 +44,103 @@ export type Database = {
         }
         Relationships: []
       }
+      job_card_media: {
+        Row: {
+          caption: string | null
+          id: string
+          job_card_id: string
+          path: string
+          sort: number
+        }
+        Insert: {
+          caption?: string | null
+          id?: string
+          job_card_id: string
+          path: string
+          sort?: number
+        }
+        Update: {
+          caption?: string | null
+          id?: string
+          job_card_id?: string
+          path?: string
+          sort?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_card_media_job_card_id_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "job_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_cards: {
+        Row: {
+          changes: Json
+          created_at: string
+          customer_id: string
+          customer_words: Json
+          due_date: string | null
+          edited: string[]
+          fields: Json
+          id: string
+          instructions_en: string[]
+          instructions_si: string[]
+          order_no: number
+          printed_at: string | null
+          questions: Json
+          revision: number
+          source: string
+          taken_by: string | null
+        }
+        Insert: {
+          changes?: Json
+          created_at?: string
+          customer_id: string
+          customer_words?: Json
+          due_date?: string | null
+          edited?: string[]
+          fields?: Json
+          id?: string
+          instructions_en?: string[]
+          instructions_si?: string[]
+          order_no?: never
+          printed_at?: string | null
+          questions?: Json
+          revision?: number
+          source: string
+          taken_by?: string | null
+        }
+        Update: {
+          changes?: Json
+          created_at?: string
+          customer_id?: string
+          customer_words?: Json
+          due_date?: string | null
+          edited?: string[]
+          fields?: Json
+          id?: string
+          instructions_en?: string[]
+          instructions_si?: string[]
+          order_no?: never
+          printed_at?: string | null
+          questions?: Json
+          revision?: number
+          source?: string
+          taken_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_cards_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       piece_media: {
         Row: {
           id: string
