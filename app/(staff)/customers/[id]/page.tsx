@@ -7,6 +7,7 @@ import { ConfirmButton } from "@/components/ConfirmButton";
 import { Chat, ChevronRight, Mail } from "@/components/Icons";
 import { formatDate } from "@/lib/dates";
 import { formatPrice } from "@/lib/format";
+import { JobList } from "@/components/JobList";
 import { deleteCustomer } from "../actions";
 
 const STATUS = {
@@ -20,13 +21,14 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const supabase = await createClient();
   // In parallel: each query is a round trip to the database.
-  const [{ data: customer }, { data: sets }, { data: sales }] = await Promise.all([
+  const [{ data: customer }, { data: sets }, { data: sales }, { data: jobs }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", id).maybeSingle(),
     supabase.from("selection_sets")
       .select("id,title,created_at,sent_at,submitted_at,handled_at,set_items(status)")
       .eq("customer_id", id)
       .order("created_at", { ascending: false }),
     supabase.from("sales").select("id,title,price,sold_at,set_id").eq("customer_id", id).order("sold_at", { ascending: false }),
+    supabase.from("job_cards").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
   ]);
   const total = (sales ?? []).reduce((sum, s) => sum + Number(s.price ?? 0), 0);
   if (!customer) notFound();
@@ -47,7 +49,10 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             </p>
           )}
         </div>
-        <Link href={`/sets/new?customer=${customer.id}`} className="btn btn-primary self-start">New set</Link>
+        <div className="flex flex-wrap gap-3 self-start">
+          <Link href={`/sets/new?customer=${customer.id}`} className="btn btn-primary">New set</Link>
+          <Link href={`/jobs/new?customer=${customer.id}`} className="btn btn-outline">New job card</Link>
+        </div>
       </div>
 
       {!!sales?.length && (
@@ -98,6 +103,13 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           );
         })}
       </ul>
+
+      {!!jobs?.length && (
+        <section aria-label="Job cards" className="mb-10">
+          <h2 className="mb-3 text-xl">Job cards</h2>
+          <JobList jobs={jobs} />
+        </section>
+      )}
 
       <h2 className="mb-3 text-xl">Details</h2>
       <CustomerForm customer={customer} />
