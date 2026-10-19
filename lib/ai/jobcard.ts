@@ -1,38 +1,39 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
 import { FIELDS, REQUIRED, toFill, type Fill, type JobCard } from "@/lib/jobcard";
 
-export const aiReady = () => !!process.env.ANTHROPIC_API_KEY;
+// Google Gemini, free tier. Free-tier prompts may be used by Google to improve its products,
+// so staff are told the chat and photos go to Google. Change MODEL if Google retires it.
+const MODEL = "gemini-3.8-flash";
+const URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+
+export const aiReady = () => !!process.env.GEMINI_API_KEY;
 
 const KEYS = FIELDS.map(([k]) => k);
 
-// Strict shape for the reply: every field present (blank when unknown), questions tied to a field or "".
+// Gemini's response schema (OpenAPI subset). It isn't strictly enforced, so toFill re-checks the reply.
 const SCHEMA = {
-  type: "object",
-  additionalProperties: false,
+  type: "OBJECT",
   required: ["fields", "questions", "instructions_en", "instructions_si"],
   properties: {
     fields: {
-      type: "object",
-      additionalProperties: false,
+      type: "OBJECT",
       required: KEYS,
-      properties: Object.fromEntries(KEYS.map((k) => [k, { type: "string" }])),
+      properties: Object.fromEntries(KEYS.map((k) => [k, { type: "STRING" }])),
     },
     questions: {
-      type: "array",
+      type: "ARRAY",
       items: {
-        type: "object",
-        additionalProperties: false,
+        type: "OBJECT",
         required: ["field", "text", "level"],
         properties: {
-          field: { type: "string", enum: [...KEYS, ""] },
-          text: { type: "string" },
-          level: { type: "string", enum: ["must", "check"] },
+          field: { type: "STRING", enum: [...KEYS, "none"] },
+          text: { type: "STRING" },
+          level: { type: "STRING", enum: ["must", "check"] },
         },
       },
     },
-    instructions_en: { type: "array", items: { type: "string" } },
-    instructions_si: { type: "array", items: { type: "string" } },
+    instructions_en: { type: "ARRAY", items: { type: "STRING" } },
+    instructions_si: { type: "ARRAY", items: { type: "STRING" } },
   },
 };
 
@@ -49,7 +50,7 @@ Fields: ${FIELDS.map(([k, l]) => `${k} (${l})`).join(", ")}. Required: ${REQUIRE
 Questions are for staff to ask the customer. Write each as one short plain-English question.
 - "must": a required field is missing, or something contradicts or is unclear in a way that would change what gets made (two different sizes, plated vs solid gold).
 - "check": worth confirming but not blocking (spelling of engraving, a finish detail).
-- Link a question to the field its answer fills, or "" if none. Don't repeat questions that are already answered.
+- Set "field" to the field the answer fills, or "none". Don't repeat questions that are already answered.
 
 Maker instructions: short imperative lines a goldsmith can follow, in English (instructions_en), and the same lines in Sinhala (instructions_si), same number of lines in the same order. In the Sinhala lines keep every number, purity, size, weight and the engraving text exactly as in the English (digits and Latin letters, not translated).`;
 
@@ -68,39 +69,53 @@ const describeCard = (card: JobCard, words: { at: string; text: string }[], capt
   ].join("\n");
 };
 
+// Gemini takes images inline, so the server downloads each signed photo URL first.
+async function inlinePhoto(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Couldn't read a photo. Try again.");
+  const mimeType = res.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+  return { inlineData: { mimeType, data: Buffer.from(await res.arrayBuffer()).toString("base64") } };
+}
+
 // One call: returns the fill to merge with mergeFill. Throws a message safe to show staff.
 export async function fillJobCard(input: {
   card: JobCard;
   words: { at: string; text: string }[];
   photos: { url: string; caption: string | null }[];
 }): Promise<Fill> {
-  const client = new Anthropic();
-  let response;
+  const photos = await Promise.all(input.photos.map((p) => inlinePhoto(p.url)));
+  let res: Response;
   try {
-    response = await client.beta.messages.create({
-      model: "claude-opus-5-5",
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
-      system: SYSTEM,
-      messages: [{
-        role: "user",
-        content: [
-          ...input.photos.map((p) => ({ type: "image" as const, source: { type: "url" as const, url: p.url } })),
-          { type: "text" as const, text: describeCard(input.card, input.words, input.photos.map((p) => p.caption ?? "")) },
-        ],
-      }],
+    res = await fetch(URL, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{
+          role: "user",
+          parts: [...photos, { text: describeCard(input.card, input.words, input.photos.map((p) => p.caption ?? "")) }],
+        }],
+        generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA },
+      }),
     });
-  } catch (error) {
-    // Status only: never log the request, which holds the customer's messages.
-    console.error("AI fill failed", error instanceof Anthropic.APIError ? error.status : "network");
-    if (error instanceof Anthropic.RateLimitError) throw new Error("The AI is busy. Try again in a minute.");
+  } catch {
     throw new Error("Couldn't reach the AI. Try again, or fill the card by hand.");
   }
-  if (response.stop_reason === "refusal") throw new Error("The AI declined this order. Fill the card by hand.");
-  if (response.stop_reason === "max_tokens") throw new Error("The AI reply was cut short. Try again.");
-  const text = response.content.find((b) => b.type === "text");
-  if (!text || text.type !== "text") throw new Error("The AI gave no answer. Try again.");
-  return toFill(JSON.parse(text.text));
+  // Status only: never log the body, which may echo the customer's messages.
+  if (res.status === 429) throw new Error("The free AI limit is used up for now. Try again later, or fill the card by hand.");
+  if (!res.ok) {
+    console.error("AI fill failed", res.status);
+    throw new Error("The AI didn't answer. Try again, or fill the card by hand.");
+  }
+  const data = await res.json();
+  if (data.promptFeedback?.blockReason) throw new Error("The AI declined this order. Fill the card by hand.");
+  const candidate = data.candidates?.[0];
+  if (candidate?.finishReason === "MAX_TOKENS") throw new Error("The AI reply was cut short. Try again.");
+  const text = candidate?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("");
+  if (!text) throw new Error("The AI gave no answer. Try again.");
+  try {
+    return toFill(JSON.parse(text));
+  } catch {
+    throw new Error("The AI reply wasn't readable. Try again.");
+  }
 }
