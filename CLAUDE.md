@@ -10,7 +10,7 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 ## Stack
 - Next.js (App Router, TypeScript, Tailwind, `@supabase/ssr`), deployed on Netlify (Vercel is not available to the user).
 - Supabase: Postgres (data), Auth (staff logins), Storage (photos/videos).
-- No other services unless a requirement forces it.
+- No other services unless a requirement forces it. Exception: the Anthropic API (`@anthropic-ai/sdk`, server only, `ANTHROPIC_API_KEY`) for job card AI fill; without the key the button is off and cards are filled by hand.
 
 ## Core model
 - `customers`: name, WhatsApp phone (E.164), birthday, anniversary, notes.
@@ -21,6 +21,14 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 
 ## Sales
 `sales` records what was bought: written only by `mark_handled()` (migration 0011, atomic, replaces a set's sales on re-handle) with title/price copied at sale time. Shown as Purchases on the customer page.
+
+## Job cards
+A custom order written up for the maker (`/jobs`, design: `docs/superpowers/specs/2026-10-16-job-cards-design.md`). Rules live in `lib/jobcard.ts` (pure, unit-tested); the AI call in `lib/ai/jobcard.ts`.
+- `job_cards` (migration 0012): `customer_words` is the customer's own text, append-only `[{at,text}]`, never written by AI. `fields` jsonb (keys in `FIELDS`; `REQUIRED` = item, metal, purity, size), `edited` = fields a person set (AI fill never overwrites them), `questions` `[{id, field?, text, level: must|check, answer?, prev?}]`, `instructions_en`/`instructions_si`.
+- Draft = any open `must` question or empty required field (`openMust`). Answering a question fills its field; clearing the answer restores the old value.
+- Every print stamps `printed_at`; the first edit after a print bumps `revision`, and each change is logged in `changes` `[{field, old, new, at, rev}]` (shown crossed out).
+- Numbers, purity, sizes and engraving must appear unchanged in the Sinhala instructions; `flagSinhala` keeps a blocking question until they do.
+- `job_card_media`: photos under `jobs/<id>/` in the `media` bucket. Deleting a card or customer removes them from storage first.
 
 ## Two surfaces
 - **Staff app** (auth required): customers, pieces, building and sending sets, dashboard with alerts. All staff have equal access, so there are no roles.
