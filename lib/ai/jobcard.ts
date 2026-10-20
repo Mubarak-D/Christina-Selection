@@ -3,9 +3,10 @@ import { FIELDS, REQUIRED, toFill, type Fill, type JobCard } from "@/lib/jobcard
 
 // Google Gemini, free tier. Free-tier prompts may be used by Google to improve its products,
 // so staff are told the chat and photos go to Google. Free models are often busy (503), out of
-// quota (429) or just hang, so each gets a time limit and then the next one is tried. The limits
-// add up to under Netlify's ~26 s request cap. Update the list if Google retires a model.
-const MODELS = [{ id: "gemini-3.8-flash", ms: 10_000 }, { id: "gemini-3.6-flash", ms: 12_000 }];
+// quota (429), slow or just hang, so each gets a time limit and then the next one is tried.
+// 3.6 goes first: in testing it always answered (if slowly) while 3.8 was busy or hung. The
+// limits add up to 45 s, under Netlify's 60 s synchronous limit. Update if Google retires a model.
+const MODELS = [{ id: "gemini-3.6-flash", ms: 25_000 }, { id: "gemini-3.8-flash", ms: 20_000 }];
 const url = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 export const aiReady = () => !!process.env.GEMINI_API_KEY;
