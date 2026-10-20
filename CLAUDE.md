@@ -13,7 +13,7 @@ Full design: `docs/superpowers/specs/2026-10-16-selection-app-design.md`.
 - No other services unless a requirement forces it. Exception: Google Gemini's free tier (plain `fetch`, server only, `GEMINI_API_KEY`) for job card AI fill; without the key the button is off and cards are filled by hand. Free-tier prompts may be used by Google, which the card page tells staff.
 
 ## Core model
-- `customers`: name, WhatsApp phone (E.164), birthday, anniversary, notes.
+- `customers`: name, WhatsApp phone (E.164, optional), email (optional; at least one of the two), `deadline` (date they need it by), notes. Birthday/anniversary were dropped in migration 0008.
 - `pieces`: one jewellery item (price, metal, karat, weight, stones, description). `in_catalogue` = false for one-offs added while building a set.
 - `piece_media`: photos/videos per piece, files in the private `media` bucket.
 - `selection_sets`: a set of pieces sent to one customer. Has an unguessable `token` (used in the public link), `sent_at`, `submitted_at`, `seen_at`, `handled_at`.
@@ -35,7 +35,7 @@ A custom order written up for the maker (`/jobs`, design: `docs/superpowers/spec
 - **Customer page** `/s/[token]` (no login): mobile-first gallery of the set's pieces; customer taps to choose, then submits. On submit, the chosen items become `chosen`, the rest become `dismissed`, and `submitted_at` is set. The customer may resubmit until `handled_at` is set (staff press "Mark handled"); each resubmit clears `seen_at` so staff are alerted again. Customers can choose any number of pieces. Media is served via short-lived signed URLs, never public buckets.
 
 ## Conventions
-- **Sending:** a `wa.me/<phone>?text=` link with the set URL prefilled; staff tap it and send from their own WhatsApp. No WhatsApp Business API.
+- **Sending:** a `wa.me/<phone>?text=` link with the set URL prefilled; staff tap it and send from their own WhatsApp. No WhatsApp Business API. Customers with only an email get a `mailto:` link instead (`lib/email.ts`). Job card read-backs use the same `wa.me` pattern.
 - **Alerts** are derived by queries, not stored or scheduled:
   - customer choices: `submitted_at` set and `handled_at` null (stay until Mark handled); `is_new` = `seen_at` null drives the New tag and nav badge
   - no reply: `sent_at` older than 3 days and `submitted_at` null
@@ -60,4 +60,4 @@ Live site: https://funny-ganache-e126c2.netlify.app (Netlify site `funny-ganache
 
 This is Next.js 16: read `AGENTS.md` and the docs in `node_modules/next/dist/docs/` before using an API you're unsure of.
 
-The build plan and progress: `docs/superpowers/plans/2026-10-16-selection-app.md`.
+The original build plan (`docs/superpowers/plans/2026-10-16-selection-app.md`) and the specs in `docs/superpowers/specs/` are historical: everything in them shipped, and later changes are recorded here, not there.
