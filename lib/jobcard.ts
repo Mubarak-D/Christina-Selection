@@ -138,7 +138,8 @@ export function toFill(raw: {
       .filter(([k, v]) => keys.includes(k) && typeof v === "string").map(([k, v]) => [k, str(v)])),
     questions: (raw.questions ?? []).filter((q) => str(q?.text)).map((q) => ({
       text: str(q.text),
-      level: q.level === "must" ? "must" as const : "check" as const,
+      // A doubt about a required field (e.g. two sizes) must block, even if the AI called it a check.
+      level: q.level === "must" || REQUIRED.includes(q.field ?? "") ? "must" as const : "check" as const,
       ...(q.field && keys.includes(q.field) ? { field: q.field } : {}),
     })),
     instructions_en: clean(raw.instructions_en),

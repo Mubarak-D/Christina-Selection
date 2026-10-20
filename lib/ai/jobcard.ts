@@ -2,9 +2,11 @@ import "server-only";
 import { FIELDS, REQUIRED, toFill, type Fill, type JobCard } from "@/lib/jobcard";
 
 // Google Gemini, free tier. Free-tier prompts may be used by Google to improve its products,
-// so staff are told the chat and photos go to Google. Change MODEL if Google retires it.
-const MODEL = "gemini-3.8-flash";
-const URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+// so staff are told the chat and photos go to Google. Free models are often busy (503), out of
+// quota (429) or just hang, so each gets a time limit and then the next one is tried. The limits
+// add up to under Netlify's ~26 s request cap. Update the list if Google retires a model.
+const MODELS = [{ id: "gemini-3.8-flash", ms: 10_000 }, { id: "gemini-3.6-flash", ms: 12_000 }];
+const url = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 export const aiReady = () => !!process.env.GEMINI_API_KEY;
 
@@ -84,30 +86,38 @@ export async function fillJobCard(input: {
   photos: { url: string; caption: string | null }[];
 }): Promise<Fill> {
   const photos = await Promise.all(input.photos.map((p) => inlinePhoto(p.url)));
-  let res: Response;
-  try {
-    res = await fetch(URL, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{
-          role: "user",
-          parts: [...photos, { text: describeCard(input.card, input.words, input.photos.map((p) => p.caption ?? "")) }],
-        }],
-        generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA },
-      }),
-    });
-  } catch {
-    throw new Error("Couldn't reach the AI. Try again, or fill the card by hand.");
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{
+      role: "user",
+      parts: [...photos, { text: describeCard(input.card, input.words, input.photos.map((p) => p.caption ?? "")) }],
+    }],
+    generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA },
+  });
+  let res: Response | undefined;
+  for (const model of MODELS) {
+    try {
+      res = await fetch(url(model.id), {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+        body,
+        signal: AbortSignal.timeout(model.ms),
+      });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "TimeoutError") { res = undefined; continue; }
+      throw new Error("Couldn't reach the AI. Try again, or fill the card by hand.");
+    }
+    if (res.status !== 503 && res.status !== 429) break;
   }
+  if (!res) throw new Error("The free AI is busy right now. Try again in a few minutes, or fill the card by hand.");
   // Status only: never log the body, which may echo the customer's messages.
-  if (res.status === 429) throw new Error("The free AI limit is used up for now. Try again later, or fill the card by hand.");
+  if (res.status === 429 || res.status === 503) throw new Error("The free AI is busy or its limit is used up. Try again later, or fill the card by hand.");
   if (!res.ok) {
     console.error("AI fill failed", res.status);
     throw new Error("The AI didn't answer. Try again, or fill the card by hand.");
   }
-  const data = await res.json();
+  const data = await res.json().catch(() => null);
+  if (!data) throw new Error("The free AI is busy right now. Try again in a few minutes, or fill the card by hand.");
   if (data.promptFeedback?.blockReason) throw new Error("The AI declined this order. Fill the card by hand.");
   const candidate = data.candidates?.[0];
   if (candidate?.finishReason === "MAX_TOKENS") throw new Error("The AI reply was cut short. Try again.");
