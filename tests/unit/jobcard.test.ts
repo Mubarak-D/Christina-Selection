@@ -134,6 +134,14 @@ test("toFill tolerates a loose reply: unknown fields, 'none' links, odd levels, 
   expect([fill.instructions_en, fill.instructions_si]).toEqual([[], []]);
 });
 
+test("toFill makes any question about a required field blocking, whatever level the AI chose", () => {
+  const fill = toFill({ fields: {}, questions: [
+    { field: "size", text: "Size 14 or 16?", level: "check" },
+    { field: "engraving", text: "Spelling OK?", level: "check" },
+  ] });
+  expect(fill.questions.map((q) => q.level)).toEqual(["must", "check"]);
+});
+
 describe("flagSinhala", () => {
   test("adds one must question when a number differs, and removes it once fixed", () => {
     const bad = flagSinhala(flagSinhala(card({ instructions_en: ["size 14"], instructions_si: ["size 16"] })));
