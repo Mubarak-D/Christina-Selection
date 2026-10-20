@@ -1,5 +1,7 @@
 # Christina Jewellers selection app: design spec
 
+> **Status (2026-10-20): complete and live.** Kept for history; Later changes (customer email/deadline instead of birthday/anniversary, sales, job cards) are described in `CLAUDE.md`.
+
 ## Context
 Christina Jewellers wants software to send a customer a set of jewellery pieces (photos, video, price, specs) the customer asked to see. The customer picks pieces on their phone through a WhatsApp link, staff see the choice, and the rest are set aside. The app also holds customer records and shows alerts. The project folder `/home/muba/Desktop/Internal Operations` holds only `CLAUDE.md` so far. All decisions below were approved section by section in brainstorming.
 

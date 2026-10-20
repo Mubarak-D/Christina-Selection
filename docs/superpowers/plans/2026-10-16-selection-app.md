@@ -1,5 +1,7 @@
 # Christina Jewellers Selection App Implementation Plan
 
+> **Status (2026-10-20): complete and live.** Kept for history; the boxes were never ticked. Later changes (customer email/deadline instead of birthday/anniversary, sales, job cards) are described in `CLAUDE.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Staff send a customer a WhatsApp link to a set of jewellery pieces; the customer picks any number on their phone; staff see the choice, manage customers, and get alerts.

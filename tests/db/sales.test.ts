@@ -6,10 +6,12 @@ const made: { customers: string[]; pieces: string[] } = { customers: [], pieces:
 afterAll(() => cleanup(made));
 
 async function seed() {
+  // Each id is recorded as soon as it exists, so a timeout mid-seed can't leave rows behind.
   const { data: c } = await db().from("customers").insert({ name: "TEST sales", phone: `+9476${Date.now() % 1e7}` }).select().single();
+  made.customers.push(c!.id);
   const { data: p } = await db().from("pieces").insert({ title: "TEST sold ring", price: 1500 }).select().single();
+  made.pieces.push(p!.id);
   const { data: s } = await db().from("selection_sets").insert({ customer_id: c!.id }).select().single();
-  made.customers.push(c!.id); made.pieces.push(p!.id);
   return { customerId: c!.id, pieceId: p!.id, setId: s!.id };
 }
 
