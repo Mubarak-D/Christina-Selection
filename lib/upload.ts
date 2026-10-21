@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@/lib/supabase/client";
 import { mediaPath } from "@/lib/media";
 
-export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // Supabase free-plan per-file limit
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // Supabase free-plan per-file limit
 export const tooBig = (files: File[]) => files.some((f) => f.size > MAX_UPLOAD_BYTES);
 
 // Browser upload straight to the private "media" bucket, then record the file on the piece.
