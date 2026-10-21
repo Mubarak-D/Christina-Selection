@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  applyAnswer, flagSinhala, isDraft, mergeFill, revisionChanges, toFill, numbersPreserved, openMust, readBackMessage, recordChange,
+  applyAnswer, flagSinhala, flagStale, isDraft, mergeFill, revisionChanges, toFill, numbersPreserved, openMust, readBackMessage, recordChange,
   type JobCard,
 } from "@/lib/jobcard";
 
@@ -159,5 +159,48 @@ describe("revisionChanges", () => {
     c = recordChange(c, "metal", "Silver", LATER);
     c = recordChange(c, "metal", "Gold", LATER);
     expect(revisionChanges(c)).toEqual({ size: "14" });
+  });
+});
+
+describe("audit fixes", () => {
+  test("a hand-filled card with an engraving and no instructions is not blocked by the Sinhala check", () => {
+    const c = flagSinhala(card({ fields: { item: "Ring", metal: "Gold", purity: "22K", size: "14", engraving: "Amma" } }));
+    expect(isDraft(c)).toBe(false);
+  });
+
+  test("the Sinhala check still blocks when the English has the engraving and the Sinhala doesn't", () => {
+    const c = flagSinhala(card({ fields: { ...card().fields, engraving: "Amma" },
+      instructions_en: ['Engrave "Amma"'], instructions_si: ["කොටන්න"] }));
+    expect(isDraft(c)).toBe(true);
+  });
+
+  test("a refill keeps instructions a person wrote", () => {
+    const c = mergeFill(card({ edited: ["instructions"], instructions_en: ["Mine"], instructions_si: ["මගේ"] }),
+      { fields: {}, questions: [], instructions_en: ["AI"], instructions_si: ["AI si"] }, AT);
+    expect([c.instructions_en, c.instructions_si]).toEqual([["Mine"], ["මගේ"]]);
+  });
+
+  test("changing a field the instructions mention blocks the card until the instructions are updated", () => {
+    const before = card({ instructions_en: ["Make the ring size 14."], instructions_si: ["size 14 මුද්ද"] });
+    const after = recordChange(before, "size", "16", AT);
+    const flagged = flagStale(before, after);
+    expect(isDraft(flagged)).toBe(true);
+    expect(flagged.questions.find((q) => q.id === "instructions-stale")?.text).toContain("14");
+    // Rewriting the instructions clears it.
+    const fixed = flagStale(flagged, { ...flagged, instructions_en: ["Make the ring size 16."], instructions_si: ["size 16 මුද්ද"] });
+    expect(isDraft(fixed)).toBe(false);
+  });
+
+  test("a value that only appears inside another number doesn't count as mentioned", () => {
+    const before = card({ fields: { ...card().fields, size: "1" }, instructions_en: ["Size 14."], instructions_si: ["14"] });
+    expect(isDraft(flagStale(before, recordChange(before, "size", "2", AT)))).toBe(false);
+  });
+
+  test("the customer's read-back never includes the app's own checks", () => {
+    const c = flagSinhala(card({ instructions_en: ["size 14"], instructions_si: ["size 16"],
+      questions: [{ id: "q", text: "Plated or solid?", level: "check" }] }));
+    const msg = readBackMessage(c, "Nimal");
+    expect(msg).toContain("Plated or solid?");
+    expect(msg).not.toContain("Sinhala");
   });
 });

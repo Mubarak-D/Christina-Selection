@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flash } from "@/lib/flash";
 import type { Json, Tables, TablesUpdate } from "@/lib/database.types";
-import { FIELDS, SOURCES, applyAnswer, flagSinhala, mergeFill, recordChange, toCard, type JobCard, type Source } from "@/lib/jobcard";
+import { FIELDS, SOURCES, applyAnswer, flagSinhala, flagStale, mergeFill, recordChange, toCard, type JobCard, type Source } from "@/lib/jobcard";
 import { aiReady, fillJobCard } from "@/lib/ai/jobcard";
 import { signedUrls } from "@/lib/public-set";
 
@@ -52,9 +52,13 @@ export async function saveDetails(id: string, formData: FormData) {
       const value = text(formData, key);
       if (value !== (card.fields[key] ?? "")) next = recordChange(next, key, value, at);
     }
+    const en = lines(formData, "instructions_en"), si = lines(formData, "instructions_si");
+    // Instructions a person changed are theirs: a later AI fill leaves them alone.
+    const changed = JSON.stringify([en, si]) !== JSON.stringify([card.instructions_en ?? [], card.instructions_si ?? []]);
+    if (changed && !next.edited.includes("instructions")) next = { ...next, edited: [...next.edited, "instructions"] };
     const source = text(formData, "source");
     return {
-      ...flagSinhala({ ...next, instructions_en: lines(formData, "instructions_en"), instructions_si: lines(formData, "instructions_si") }),
+      ...flagSinhala(flagStale(card, { ...next, instructions_en: en, instructions_si: si })),
       due_date: text(formData, "due_date") || null,
       ...(isSource(source) ? { source } : {}),
     };
@@ -64,7 +68,7 @@ export async function saveDetails(id: string, formData: FormData) {
 
 export async function answerQuestion(id: string, questionId: string, formData: FormData) {
   // The Sinhala check can't be answered away: it comes back until the instructions match.
-  await update(id, (card) => flagSinhala(applyAnswer(card, questionId, text(formData, "answer"), new Date().toISOString())));
+  await update(id, (card) => flagSinhala(flagStale(card, applyAnswer(card, questionId, text(formData, "answer"), new Date().toISOString()))));
 }
 
 // The customer's own words, appended as written. Nothing else ever writes this column.
@@ -97,7 +101,7 @@ async function fill(id: string, done: string): Promise<string> {
       photos: media.filter((m) => urls[m.path]).map((m) => ({ url: urls[m.path], caption: m.caption })),
     });
     const at = new Date().toISOString();
-    await update(id, (card) => flagSinhala(mergeFill(card, result, at)));
+    await update(id, (card) => flagSinhala(flagStale(card, mergeFill(card, result, at))));
     return done;
   } catch (e) {
     return e instanceof Error ? e.message : "AI fill failed.";

@@ -45,6 +45,9 @@ test("dashboard shows each kind of alert, and a seen choice drops off", async ({
 
   await section("Customer choices").getByRole("link", { name: new RegExp(names.chose) }).click();
   await expect(page).toHaveURL(new RegExp(`/sets/${newChoiceSet}$`));
+  // The URL changes before the page has rendered (loading screen); the set is only marked seen once
+  // it has, so wait for the page itself before leaving.
+  await expect(page.getByRole("button", { name: "Mark handled" })).toBeVisible();
 
   // After opening it, the choice stays until handled, just without the New tag.
   await page.goto("/");
