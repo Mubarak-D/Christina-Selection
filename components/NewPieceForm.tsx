@@ -83,7 +83,7 @@ export function NewPieceForm({
     const what = inCatalogue ? "Piece saved" : "One-off piece added";
     toast(failed
       ? `${what}, but ${failed} of ${chosen.length} ${chosen.length === 1 ? "file" : "files"} didn't upload. Add ${failed === 1 ? "it" : "them"} again on the piece's page.`
-      : `${what}${done ? ` with ${done} ${done === 1 ? "file" : "files"}` : ""}`);
+      : `${what}${done ? ` with ${done} ${done === 1 ? "file" : "files"}` : ""}`, failed ? "error" : "ok");
     const to = destination.replace(":id", id);
     if (to === pathname) {
       form.current?.reset();

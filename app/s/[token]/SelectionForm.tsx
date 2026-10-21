@@ -128,7 +128,9 @@ export function SelectionForm({ token, set }: { token: string; set: PublicSet })
               {error && <p role="alert" className="text-center text-danger">{error}</p>}
               {chosen.size ? (
                 <button onClick={submit} disabled={sending} className="btn btn-primary w-full">
-                  {sending ? "Sending…" : `Submit my choice (${chosen.size})`}
+                  {/* The whole label pulses when the count changes. One inline-block keeps the accessible name
+                      "Submit my choice (2)": an inline-block number alone gets spaces added around it. */}
+                  {sending ? "Sending…" : <span key={chosen.size} className="pop inline-block">Submit my choice ({chosen.size})</span>}
                 </button>
               ) : (
                 <div className="flex items-center justify-between gap-3">
@@ -200,7 +202,15 @@ function PieceCard({ item, selected, onToggle, onMediaError, mediaKey }: {
         </section>
       )}
       {count > 1 && (
-        <p className="px-6 pt-3 text-sm text-muted">
+        // Which photo is showing: the current dot grows and turns gold (transform only, no reflow).
+        <div aria-hidden className="flex justify-center gap-2 pt-3">
+          {item.media.map((m, i) => (
+            <span key={m.url} className={`h-1.5 w-1.5 rounded-full transition-[transform,background-color] duration-[var(--dur-normal)] ease-[var(--ease-smooth)] ${i === at ? "scale-[1.7] bg-gold" : "bg-ink/20"}`} />
+          ))}
+        </div>
+      )}
+      {count > 1 && (
+        <p className="px-6 pt-2 text-sm text-muted">
           <span className="sm:hidden">Swipe to see all {count}</span>
           <span className="hidden sm:inline">{count} photos and videos. Use the arrows to see them all.</span>
         </p>
@@ -236,8 +246,10 @@ function ChosenList({ items }: { items: PublicItem[] }) {
   if (!items.length) return null;
   return (
     <ul className="mx-auto mt-8 flex max-w-sm flex-col divide-y divide-line border-y border-line text-left">
-      {items.map((i) => (
-        <li key={i.pieceId} className="flex items-baseline justify-between gap-4 py-4">
+      {items.map((i, n) => (
+        // Arrive one by one, after the gold line under "Thank you" has drawn.
+        <li key={i.pieceId} className="stagger-in flex items-baseline justify-between gap-4 py-4"
+          style={{ animationDelay: `${450 + Math.min(n, 6) * 90}ms` }}>
           <span>{i.title}</span>
           <span className="price shrink-0 text-gold-ink">{formatPrice(i.price)}</span>
         </li>
