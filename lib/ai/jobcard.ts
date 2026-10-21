@@ -80,6 +80,16 @@ async function inlinePhoto(url: string) {
   return { inlineData: { mimeType, data: Buffer.from(await res.arrayBuffer()).toString("base64") } };
 }
 
+// Which quota a 429 hit, from Google's error body (e.g. "...PerDay..." or "...PerMinute..."). Holds no customer data.
+function rateLimitQuota(body: string): string {
+  try {
+    const details: { violations?: { quotaId?: string }[] }[] = JSON.parse(body).error?.details ?? [];
+    return details.flatMap((d) => d.violations ?? []).map((v) => v.quotaId).find(Boolean) ?? "unknown-quota";
+  } catch {
+    return "unknown-quota";
+  }
+}
+
 // One call: returns the fill to merge with mergeFill. Throws a message safe to show staff.
 export async function fillJobCard(input: {
   card: JobCard;
@@ -95,7 +105,11 @@ export async function fillJobCard(input: {
     }],
     generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA },
   });
+  // What each model said, for one log line and the right message. Only statuses and Google's quota
+  // ids are logged: never the request or a reply, which may echo the customer's messages.
+  const tried: string[] = [];
   let res: Response | undefined;
+  let limit: "day" | "minute" | undefined;
   for (const model of MODELS) {
     try {
       res = await fetch(url(model.id), {
@@ -105,18 +119,28 @@ export async function fillJobCard(input: {
         signal: AbortSignal.timeout(model.ms),
       });
     } catch (e) {
-      if (e instanceof DOMException && e.name === "TimeoutError") { res = undefined; continue; }
+      if (e instanceof DOMException && e.name === "TimeoutError") { tried.push(`${model.id} timeout`); res = undefined; continue; }
+      console.error("AI fill failed:", tried.concat(`${model.id} network`).join(", "));
       throw new Error("Couldn't reach the AI. Try again, or fill the card by hand.");
     }
-    if (res.status !== 503 && res.status !== 429) break;
+    if (res.status === 429) {
+      const quota = rateLimitQuota(await res.text().catch(() => ""));
+      tried.push(`${model.id} 429 ${quota}`);
+      if (/day/i.test(quota)) limit = "day";
+      else limit ??= "minute";
+      continue;
+    }
+    tried.push(`${model.id} ${res.status}`);
+    if (res.status !== 503) break;
   }
-  if (!res) throw new Error("The free AI is busy right now. Try again in a few minutes, or fill the card by hand.");
-  // Status only: never log the body, which may echo the customer's messages.
-  if (res.status === 429 || res.status === 503) throw new Error("The free AI is busy or its limit is used up. Try again later, or fill the card by hand.");
-  if (!res.ok) {
-    console.error("AI fill failed", res.status);
+  if (!res?.ok) {
+    console.error("AI fill failed:", tried.join(", "));
+    if (limit === "day") throw new Error("The free AI's daily limit is used up. It resets tomorrow; fill this card by hand.");
+    if (limit === "minute") throw new Error("Too many AI requests in the last minute. Wait a minute and try again.");
+    if (!res || res.status === 503) throw new Error("The free AI is busy right now. Try again in a few minutes, or fill the card by hand.");
     throw new Error("The AI didn't answer. Try again, or fill the card by hand.");
   }
+  if (tried.length > 1) console.info("AI fill used a fallback:", tried.join(", "));
   const data = await res.json().catch(() => null);
   if (!data) throw new Error("The free AI is busy right now. Try again in a few minutes, or fill the card by hand.");
   if (data.promptFeedback?.blockReason) throw new Error("The AI declined this order. Fill the card by hand.");
