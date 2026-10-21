@@ -4,10 +4,9 @@ export const selectionMessage = (firstName: string, url: string) =>
   `Tap to choose your favourites: ${url}`;
 
 // Click-to-chat link: opens WhatsApp with the message ready; staff press send themselves.
-export function buildWhatsAppLink(phoneE164: string, url: string, firstName: string): string {
-  return `https://wa.me/${phoneE164.replace(/\D/g, "")}?text=${encodeURIComponent(selectionMessage(firstName, url))}`;
-}
-
-// Job card read-back (see readBackMessage): staff check it in WhatsApp and press send.
+// Used as-is for job card read-backs (see readBackMessage).
 export const buildReadBackLink = (phoneE164: string, message: string) =>
   `https://wa.me/${phoneE164.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+
+export const buildWhatsAppLink = (phoneE164: string, url: string, firstName: string) =>
+  buildReadBackLink(phoneE164, selectionMessage(firstName, url));
