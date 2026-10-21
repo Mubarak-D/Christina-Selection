@@ -4,6 +4,7 @@ import { BackLink } from "@/components/BackLink";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { JobPhotos } from "@/components/JobPhotos";
 import { SubmitButton } from "@/components/SubmitButton";
+import { AiSubmitButton } from "@/components/AiSubmitButton";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatDate } from "@/lib/dates";
@@ -50,7 +51,9 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         </span>
       </div>
       <div className="mb-8 flex flex-wrap items-center gap-3">
-        <Link href={`/jobs/${job.id}/print`} className="btn btn-primary">Print</Link>
+        <Link href={`/jobs/${job.id}/print`} className={`btn ${isDraft(card) ? "btn-outline" : "btn-primary"}`}>
+          {isDraft(card) ? "Print draft" : "Print"}
+        </Link>
         {readBack ? (
           <a href={readBack} target="_blank" rel="noopener noreferrer" className="btn btn-outline">Read back on WhatsApp</a>
         ) : (
@@ -63,13 +66,13 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <h2 className="text-xl">Questions</h2>
           {ai ? (
             <form action={fillWithAI.bind(null, job.id)}>
-              <SubmitButton className="btn btn-gold" pendingLabel="Reading the order…">Fill with AI</SubmitButton>
+              <AiSubmitButton className="btn btn-gold" pendingLabel="Reading the order…">Fill with AI</AiSubmitButton>
             </form>
           ) : (
             <p className="text-sm text-muted">AI fill is off: add GEMINI_API_KEY to the server settings.</p>
           )}
         </div>
-        {ai && <p className="mb-3 text-sm text-muted">AI fills blank details and asks questions. It never changes details you typed or answered. The chat and photos are sent to Google Gemini.</p>}
+        {ai && <p className="mb-3 text-sm text-muted">AI fills blank details and asks questions in about 10–40 seconds. It never changes details you typed or answered. The chat and photos are sent to Google Gemini.</p>}
         {!open.length && !answered.length && <p className="text-muted">Nothing to confirm.</p>}
         <ul className="flex flex-col gap-3">
           {open.map((q) => SYSTEM_QUESTIONS.includes(q.id) ? (
@@ -147,9 +150,9 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <label className="flex flex-col gap-1">Paste the customer&apos;s reply
             <textarea name="words" rows={3} required />
           </label>
-          <SubmitButton className="btn btn-outline self-start" pendingLabel={ai ? "Adding and updating the card…" : "Adding…"}>
+          <AiSubmitButton className="btn btn-outline self-start" pendingLabel={ai ? "Adding and updating the card…" : "Adding…"}>
             {ai ? "Add reply and update card" : "Add reply"}
-          </SubmitButton>
+          </AiSubmitButton>
         </form>
       </section>
 

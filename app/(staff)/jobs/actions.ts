@@ -79,16 +79,19 @@ export async function addCustomerWords(id: string, formData: FormData) {
   await update(id, (_card, row) => ({
     customer_words: [...(row.customer_words as Json[]), { at: new Date().toISOString(), text: words }],
   }));
-  await flash(aiReady() ? await fill(id, "Reply added and card updated") : "Reply added");
+  if (!aiReady()) return flash("Reply added");
+  const r = await fill(id, "Reply added and card updated");
+  await flash(r.message, r.ok ? "ok" : "error");
 }
 
 export async function fillWithAI(id: string) {
-  await flash(await fill(id, "Filled by AI. Check the questions."));
+  const r = await fill(id, "Filled by AI. Check the questions.");
+  await flash(r.message, r.ok ? "ok" : "error");
 }
 
-// Runs the AI fill and returns the message to show; failures come back as a message, not a crash.
-async function fill(id: string, done: string): Promise<string> {
-  if (!aiReady()) return "AI fill isn't set up (no GEMINI_API_KEY).";
+// Runs the AI fill and returns what to tell staff; failures come back as a message, not a crash.
+async function fill(id: string, done: string): Promise<{ ok: boolean; message: string }> {
+  if (!aiReady()) return { ok: false, message: "AI fill isn't set up (no GEMINI_API_KEY)." };
   const supabase = await createClient();
   const { data: row, error } = await supabase.from("job_cards").select("*, job_card_media(path,caption,sort)").eq("id", id).single();
   if (error) throw error;
@@ -102,9 +105,9 @@ async function fill(id: string, done: string): Promise<string> {
     });
     const at = new Date().toISOString();
     await update(id, (card) => flagSinhala(flagStale(card, mergeFill(card, result, at))));
-    return done;
+    return { ok: true, message: done };
   } catch (e) {
-    return e instanceof Error ? e.message : "AI fill failed.";
+    return { ok: false, message: e instanceof Error ? e.message : "AI fill failed." };
   }
 }
 
