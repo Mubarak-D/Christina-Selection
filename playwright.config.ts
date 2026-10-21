@@ -7,6 +7,8 @@ export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
   workers: 1,
+  // Every check waits up to 10 s: saves go to a remote Supabase project and can take over 5 s.
+  expect: { timeout: 10_000 },
   use: { baseURL: "http://localhost:3000", trace: "retain-on-failure", screenshot: "only-on-failure" },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },

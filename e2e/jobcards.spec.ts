@@ -17,6 +17,7 @@ test.afterAll(async () => {
 });
 
 test("manual job card: draft until answered, clean print, then REVISION 2 after an edit", async ({ page }) => {
+  test.setTimeout(90_000); // one long journey: ~20 page loads plus a photo upload
   // Create a walk-in card: everything required is missing, so it's a draft.
   await page.goto(`/jobs/new?customer=${customerId}`);
   await page.getByLabel("Order came by").selectOption("walk_in");
@@ -29,6 +30,7 @@ test("manual job card: draft until answered, clean print, then REVISION 2 after 
   await page.locator("input[name=metal]").fill("Yellow gold");
   await page.locator("input[name=purity]").fill("22K");
   await page.getByRole("button", { name: "Save details" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible(); // wait for the save itself
   await expect(page.getByText("Size not given")).toBeVisible();
   await expect(page.getByText("Item not given")).toHaveCount(0);
 
@@ -42,6 +44,15 @@ test("manual job card: draft until answered, clean print, then REVISION 2 after 
   await page.getByRole("button", { name: "Save answer" }).click();
   await expect(page.getByText("Ready for the maker")).toBeVisible();
   await expect(page.locator("input[name=size]")).toHaveValue("14");
+
+  // A reference photo with a caption: stored under jobs/<id>/ and shown on the printout.
+  const jobId = cardUrl.split("/jobs/")[1];
+  await page.getByLabel("Add photos").setInputFiles("e2e/fixtures/ring.jpg");
+  await expect(page.getByRole("status").filter({ hasText: "Photo added" })).toBeVisible({ timeout: 20_000 });
+  await page.getByLabel("Caption").fill("Like this, but thinner");
+  await page.getByRole("button", { name: "Save caption" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Caption saved" })).toBeVisible();
+  expect((await service().storage.from("media").list(`jobs/${jobId}`)).data).toHaveLength(1);
 
   // Clean print; pressing Print stamps the card (the dialog itself is stubbed).
   await page.goto(`${cardUrl}/print`);
@@ -66,7 +77,16 @@ test("manual job card: draft until answered, clean print, then REVISION 2 after 
   await expect(page.getByText("REVISION 2")).toBeVisible();
   await expect(page.locator("s", { hasText: "14" })).toBeVisible();
 
+  await expect(page.getByText("Like this, but thinner")).toBeVisible(); // caption on the printout
+
   // Listed on the customer's page.
   await page.goto(`/customers/${customerId}`);
   await expect(page.getByRole("region", { name: "Job cards" }).getByText("Ready")).toBeVisible();
+
+  // Deleting the card removes its photo from storage too.
+  await page.goto(cardUrl);
+  await page.getByRole("button", { name: "Delete job card" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+  await expect(page).toHaveURL(/\/jobs$/);
+  expect((await service().storage.from("media").list(`jobs/${jobId}`)).data ?? []).toHaveLength(0);
 });

@@ -97,18 +97,21 @@ export function mergeFill(card: JobCard, fill: Fill, at: string): JobCard {
   const fresh = fill.questions
     .filter((q) => !(q.field && card.edited.includes(q.field)))
     .map((q): Question => ({ ...q, id: crypto.randomUUID() }));
+  const keep = card.edited.includes("instructions"); // a person wrote them; the AI doesn't replace them
   return {
     ...next,
     questions: [...card.questions.filter((q) => !isOpen(q)), ...fresh],
-    instructions_en: fill.instructions_en,
-    instructions_si: fill.instructions_si,
+    instructions_en: keep ? card.instructions_en : fill.instructions_en,
+    instructions_si: keep ? card.instructions_si : fill.instructions_si,
   };
 }
 
 // WhatsApp read-back: what we have confirmed, then what is still open.
 export function readBackMessage(card: JobCard, firstName: string): string {
   const details = FIELDS.filter(([k]) => card.fields[k]?.trim()).map(([k, l]) => `• ${l}: ${card.fields[k]}`);
-  const open = [...card.questions.filter(isOpen), ...openMust(card).filter((q) => q.id.startsWith("missing:"))];
+  // The app's own checks (Sinhala mismatch, stale instructions) are for staff, not the customer.
+  const forCustomer = (q: Question) => isOpen(q) && !SYSTEM_QUESTIONS.includes(q.id);
+  const open = [...card.questions.filter(forCustomer), ...openMust(card).filter((q) => q.id.startsWith("missing:"))];
   const lines = [`Hi ${firstName}, here are the details of your order with Christina Jewellers:`, ...details];
   if (open.length) lines.push("", "Please confirm:", ...open.map((q, i) => `${i + 1}. ${q.text}`));
   lines.push("", "Reply here if anything needs changing.");
@@ -116,10 +119,13 @@ export function readBackMessage(card: JobCard, firstName: string): string {
 }
 
 // Numbers (purity, sizes, weights) and the engraving must appear unchanged in the Sinhala lines.
+// The engraving is only checked when the English mentions it (a hand-filled card may have no
+// instructions at all).
 export function numbersPreserved(en: string[], si: string[], engraving?: string): boolean {
   const nums = (lines: string[]) => (lines.join(" ").match(/\d+(?:[.,]\d+)?/g) ?? []).sort().join("|");
   if (nums(en) !== nums(si)) return false;
-  return !engraving?.trim() || si.join(" ").includes(engraving.trim());
+  const e = engraving?.trim();
+  return !e || !en.join(" ").includes(e) || si.join(" ").includes(e);
 }
 
 // The AI reply tidied into a Fill. The model's schema isn't strictly enforced, so anything
@@ -145,6 +151,29 @@ export function toFill(raw: {
     instructions_en: clean(raw.instructions_en),
     instructions_si: clean(raw.instructions_si),
   };
+}
+
+// Questions the app raises itself. They clear when the cause is fixed, so they get no answer box.
+export const SYSTEM_QUESTIONS = ["sinhala-check", "instructions-stale"];
+
+// After a change, blocks the card if a field changed to a new value while the (unchanged)
+// instructions still mention its old value, e.g. "size 14" after Size became 16. The question stays
+// until the instructions themselves change (edited, or rewritten by a fill).
+export function flagStale(before: JobCard, after: JobCard): JobCard {
+  const rest = after.questions.filter((q) => q.id !== "instructions-stale");
+  if (JSON.stringify(before.instructions_en ?? []) !== JSON.stringify(after.instructions_en ?? [])) return { ...after, questions: rest };
+  const text = (after.instructions_en ?? []).join(" ");
+  const mentions = (value: string) => new RegExp(
+    `(?<![\\p{L}\\p{N}])${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(text);
+  const field = Object.keys(after.fields).find((f) => {
+    const old = (before.fields[f] ?? "").trim();
+    return old && old !== (after.fields[f] ?? "").trim() && mentions(old);
+  });
+  if (!field) return after;
+  return { ...after, questions: [...rest, {
+    id: "instructions-stale", level: "must",
+    text: `The instructions still say "${before.fields[field]}", but ${label(field)} is now "${after.fields[field] || "blank"}". Update them in Details, or press Fill with AI.`,
+  }] };
 }
 
 // Keeps one blocking question while the Sinhala instructions don't carry the same numbers and

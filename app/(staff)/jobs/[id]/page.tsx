@@ -7,7 +7,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/public-set";
 import { formatDate } from "@/lib/dates";
-import { FIELDS, SOURCES, SOURCE_LABEL, isDraft, isOpen, openMust, readBackMessage, revisionChanges, toCard, type Source } from "@/lib/jobcard";
+import { FIELDS, SOURCES, SOURCE_LABEL, SYSTEM_QUESTIONS, isDraft, isOpen, openMust, readBackMessage, revisionChanges, toCard, type Source } from "@/lib/jobcard";
 import { buildReadBackLink } from "@/lib/whatsapp";
 import { aiReady } from "@/lib/ai/jobcard";
 import { addCustomerWords, answerQuestion, deleteJob, deletePhoto, fillWithAI, saveCaption, saveDetails } from "../actions";
@@ -72,7 +72,12 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         {ai && <p className="mb-3 text-sm text-muted">AI fills blank details and asks questions. It never changes details you typed or answered. The chat and photos are sent to Google Gemini.</p>}
         {!open.length && !answered.length && <p className="text-muted">Nothing to confirm.</p>}
         <ul className="flex flex-col gap-3">
-          {open.map((q) => (
+          {open.map((q) => SYSTEM_QUESTIONS.includes(q.id) ? (
+            // Raised by the app; it clears when the cause is fixed, so there's nothing to answer.
+            <li key={q.id} className="rounded-xl border border-danger/40 bg-pearl p-4">
+              <span className="text-danger">Must fix</span> · {q.text}
+            </li>
+          ) : (
             <li key={q.id} className="rounded-xl border border-line bg-pearl p-4">
               <form action={answerQuestion.bind(null, job.id, q.id)} className="flex flex-col gap-2">
                 <label className="flex flex-col gap-1">
